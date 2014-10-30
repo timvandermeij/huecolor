@@ -3,4 +3,6 @@
     <string name="app_name">HueColor</string>
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
+    <string name="take_camera_photo">Take Camera Photo</string>
+    <string name="browse_photo">Browse for Photo</string>
 </resources>
