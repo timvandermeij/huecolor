@@ -55,8 +55,8 @@ public class MainActivity extends Activity {
                 fileDialog.setFileEndsWith(".jpg");
                 fileDialog.addFileListener(new FileDialog.FileSelectedListener() {
                     public void fileSelected(File file) {
-                    Log.d("HueColor", "selected file " + file.toString());
-                    fileUri = Uri.fromFile(file);
+                        Log.d("HueColor", "selected file " + file.toString());
+                        fileUri = Uri.fromFile(file);
                     }
                 });
                 fileDialog.showDialog();
@@ -64,14 +64,14 @@ public class MainActivity extends Activity {
         });
     }
 
-    /*
+    /**
      * Create a file URI for saving an image or video
      */
     private static Uri getOutputMediaFileUri(int type){
         return Uri.fromFile(getOutputMediaFile(type));
     }
 
-    /*
+    /**
      * Create a file for saving an image or video
      */
     private static File getOutputMediaFile(int type){

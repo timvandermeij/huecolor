@@ -44,7 +44,7 @@ public class FileDialog {
     }
 
     /**
-     * @return file dialog
+     * @return File dialog
      */
     public Dialog createFileDialog() {
         Dialog dialog;
@@ -69,14 +69,15 @@ public class FileDialog {
                     dialog.cancel();
                     dialog.dismiss();
                     showDialog();
-                } else fireFileSelectedEvent(chosenFile);
+                } else {
+                    fireFileSelectedEvent(chosenFile);
+                }
             }
         });
 
         dialog = builder.show();
         return dialog;
     }
-
 
     public void addFileListener(FileSelectedListener listener) {
         fileListenerList.add(listener);
@@ -125,15 +126,20 @@ public class FileDialog {
         this.currentPath = path;
         List<String> r = new ArrayList<String>();
         if (path.exists()) {
-            if (path.getParentFile() != null) r.add(PARENT_DIR);
+            if (path.getParentFile() != null) {
+                r.add(PARENT_DIR);
+            }
             FilenameFilter filter = new FilenameFilter() {
                 public boolean accept(File dir, String filename) {
                     File sel = new File(dir, filename);
-                    if (!sel.canRead()) return false;
-                    if (selectDirectoryOption) return sel.isDirectory();
-                    else {
+                    if (!sel.canRead()) {
+                        return false;
+                    }
+                    if (selectDirectoryOption) {
+                        return sel.isDirectory();
+                    } else {
                         boolean endsWith = (fileEndsWith == null ? true :
-                                filename.toLowerCase().endsWith(fileEndsWith));
+                                            filename.toLowerCase().endsWith(fileEndsWith));
                         return endsWith || sel.isDirectory();
                     }
                 }
@@ -145,8 +151,10 @@ public class FileDialog {
     }
 
     private File getChosenFile(String fileChosen) {
-        if (fileChosen.equals(PARENT_DIR)) return currentPath.getParentFile();
-        else return new File(currentPath, fileChosen);
+        if (fileChosen.equals(PARENT_DIR)) {
+            return currentPath.getParentFile();
+        }
+        return new File(currentPath, fileChosen);
     }
 
     public void setFileEndsWith(String fileEndsWith) {
