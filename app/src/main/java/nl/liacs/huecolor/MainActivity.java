@@ -30,6 +30,13 @@ public class MainActivity extends Activity {
         camera.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                // Verify that the SD card is mounted.
+                String state = Environment.getExternalStorageState();
+                if (!state.equals(Environment.MEDIA_MOUNTED)) {
+                    Toast.makeText(MainActivity.this, "SD card is not mounted", Toast.LENGTH_LONG).show();
+                    return;
+                }
+
                 // Create Intent to take a picture and return control to the calling application
                 Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
 
@@ -46,10 +53,18 @@ public class MainActivity extends Activity {
             }
         });
 
+        // Get the button for browsing for a photo and add a listener to open a file chooser
         Button browse = (Button)findViewById(R.id.browse);
         browse.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                // Verify that the SD card is mounted.
+                String state = Environment.getExternalStorageState();
+                if (!state.equals(Environment.MEDIA_MOUNTED)) {
+                    Toast.makeText(MainActivity.this, "SD card is not mounted", Toast.LENGTH_LONG).show();
+                    return;
+                }
+
                 File mPath = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).toString());
                 FileDialog fileDialog = new FileDialog(MainActivity.this, mPath);
                 fileDialog.setFileEndsWith(".jpg");
@@ -67,15 +82,14 @@ public class MainActivity extends Activity {
     /**
      * Create a file URI for saving an image or video
      */
-    private static Uri getOutputMediaFileUri(int type){
+    private static Uri getOutputMediaFileUri(int type) {
         return Uri.fromFile(getOutputMediaFile(type));
     }
 
     /**
      * Create a file for saving an image or video
      */
-    private static File getOutputMediaFile(int type){
-        // TODO: check that the SDCard is mounted using Environment.getExternalStorageState()
+    private static File getOutputMediaFile(int type) {
         File mediaStorageDir = new File(Environment.getExternalStoragePublicDirectory(
                                         Environment.DIRECTORY_PICTURES), "HueColor");
 
