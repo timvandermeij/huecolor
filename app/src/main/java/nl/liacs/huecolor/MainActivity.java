@@ -38,7 +38,7 @@ public class MainActivity extends Activity {
                 try {
                     fileUri = getOutputMediaFileUri(MEDIA_TYPE_IMAGE); // create a file to save the image
                 } catch (Exception e) {
-                    Toast.makeText(getParent(), "Could not create an image file for photo",
+                    Toast.makeText(MainActivity.this, "Could not create an image file for photo",
                             Toast.LENGTH_LONG).show();
                     return;
                 }
@@ -46,6 +46,24 @@ public class MainActivity extends Activity {
 
                 // start the image capture Intent
                 startActivityForResult(intent, CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE);
+            }
+        });
+
+        Button browse = (Button)findViewById(R.id.browse);
+        browse.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                File mPath = new File(Environment.getExternalStoragePublicDirectory(
+                        Environment.DIRECTORY_PICTURES).toString());
+                FileDialog fileDialog = new FileDialog(MainActivity.this, mPath);
+                fileDialog.setFileEndsWith(".jpg");
+                fileDialog.addFileListener(new FileDialog.FileSelectedListener() {
+                    public void fileSelected(File file) {
+                        Log.d("HueColor", "selected file " + file.toString());
+                        fileUri = Uri.fromFile(file);
+                    }
+                });
+                fileDialog.showDialog();
             }
         });
     }
@@ -93,12 +111,8 @@ public class MainActivity extends Activity {
         if (requestCode == CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE) {
             // Handle the saved camera photo file
             if (resultCode == RESULT_OK) {
-                String text = "Image saved";
-                if (data != null) {
-                    text += " to:\n" + data.getData();
-                }
                 // Image captured and saved to fileUri specified in the Intent
-                Toast.makeText(this, text, Toast.LENGTH_LONG).show();
+                Toast.makeText(this, "Image saved to:\n" + fileUri, Toast.LENGTH_LONG).show();
             } else if (resultCode == RESULT_CANCELED) {
                 // User cancelled the image capture
                 Toast.makeText(this, "Cancelled", Toast.LENGTH_LONG).show();
