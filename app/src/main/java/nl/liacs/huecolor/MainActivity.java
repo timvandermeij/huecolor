@@ -71,6 +71,16 @@ public class MainActivity extends Activity {
                 fileDialog.showDialog();
             }
         });
+
+        // Get the button for selecting an object in an image
+        Button selection = (Button)findViewById(R.id.select_object);
+        selection.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(MainActivity.this, SelectionActivity.class);
+                startActivity(intent);
+            }
+        });
     }
 
     /**
