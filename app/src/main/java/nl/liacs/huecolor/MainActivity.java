@@ -30,19 +30,19 @@ public class MainActivity extends Activity {
         camera.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-            // Create Intent to take a picture and return control to the calling application
-            Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+                // Create Intent to take a picture and return control to the calling application
+                Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
 
-            try {
-                fileUri = getOutputMediaFileUri(MEDIA_TYPE_IMAGE); // Create a file to save the image
-            } catch (Exception e) {
-                Toast.makeText(MainActivity.this, "Could not create an image file for photo", Toast.LENGTH_LONG).show();
-                return;
-            }
-            intent.putExtra(MediaStore.EXTRA_OUTPUT, fileUri); // Set the image file name
+                try {
+                    fileUri = getOutputMediaFileUri(MEDIA_TYPE_IMAGE); // Create a file to save the image
+                } catch (Exception e) {
+                    Toast.makeText(MainActivity.this, "Could not create an image file for photo", Toast.LENGTH_LONG).show();
+                    return;
+                }
+                intent.putExtra(MediaStore.EXTRA_OUTPUT, fileUri); // Set the image file name
 
-            // Start the image capture intent
-            startActivityForResult(intent, CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE);
+                // Start the image capture intent
+                startActivityForResult(intent, CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE);
             }
         });
 
