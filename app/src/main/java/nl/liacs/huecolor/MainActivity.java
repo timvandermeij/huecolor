@@ -30,10 +30,7 @@ public class MainActivity extends Activity {
         camera.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // Verify that the SD card is mounted.
-                String state = Environment.getExternalStorageState();
-                if (!state.equals(Environment.MEDIA_MOUNTED)) {
-                    Toast.makeText(MainActivity.this, "SD card is not mounted", Toast.LENGTH_LONG).show();
+                if (!checkExternalStorage()) {
                     return;
                 }
 
@@ -58,10 +55,7 @@ public class MainActivity extends Activity {
         browse.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // Verify that the SD card is mounted.
-                String state = Environment.getExternalStorageState();
-                if (!state.equals(Environment.MEDIA_MOUNTED)) {
-                    Toast.makeText(MainActivity.this, "SD card is not mounted", Toast.LENGTH_LONG).show();
+                if (!checkExternalStorage()) {
                     return;
                 }
 
@@ -70,7 +64,7 @@ public class MainActivity extends Activity {
                 fileDialog.setFileEndsWith(".jpg");
                 fileDialog.addFileListener(new FileDialog.FileSelectedListener() {
                     public void fileSelected(File file) {
-                        Log.d("HueColor", "selected file " + file.toString());
+                        Log.d("HueColor", "Selected file " + file.toString());
                         fileUri = Uri.fromFile(file);
                     }
                 });
@@ -124,6 +118,22 @@ public class MainActivity extends Activity {
                 // Image capture failed
                 Toast.makeText(this, "Image capture failed", Toast.LENGTH_LONG).show();
             }
+        }
+    }
+
+    /**
+     * Checks the external storage's state.
+     */
+    private boolean checkExternalStorage() {
+        String state = Environment.getExternalStorageState();
+        if (state.equals(Environment.MEDIA_MOUNTED)) {
+            return true;
+        } else if (state.equals(Environment.MEDIA_MOUNTED_READ_ONLY)) {
+            Toast.makeText(MainActivity.this, "External storage is read-only", Toast.LENGTH_LONG).show();
+            return false;
+        } else {
+            Toast.makeText(MainActivity.this, "External storage is not available", Toast.LENGTH_LONG).show();
+            return false;
         }
     }
 }
