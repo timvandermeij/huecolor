@@ -1,76 +1,114 @@
 package nl.liacs.huecolor;
 
 import android.app.Activity;
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.ColorMatrix;
-import android.graphics.ColorMatrixColorFilter;
 import android.graphics.Paint;
+import android.graphics.Path;
 import android.os.Bundle;
 import android.view.MotionEvent;
 import android.view.View;
-import android.widget.ImageView;
 
-/**
- * Somewhat based on https://stackoverflow.com/questions/18520287/draw-a-circle-on-an-existing-image.
- */
-public class SelectionActivity extends Activity implements View.OnTouchListener {
-    private Canvas canvas;
-    private Paint paint;
-    private ImageView imageView;
-
+public class SelectionActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_selection);
+        setContentView(new SelectionView(this));
 
-        // Load the original image.
-        BitmapFactory.Options myOptions = new BitmapFactory.Options();
-        myOptions.inDither = true;
-        myOptions.inScaled = false;
-        myOptions.inPreferredConfig = Bitmap.Config.ARGB_8888;
-        myOptions.inPurgeable = true;
-
-        Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.example, myOptions);
-        Bitmap workingBitmap = Bitmap.createBitmap(bitmap);
-        Bitmap mutableBitmap = workingBitmap.copy(Bitmap.Config.ARGB_8888, true);
-
-        imageView = (ImageView)findViewById(R.id.imageView);
-        imageView.setImageBitmap(mutableBitmap);
-
-        // Convert the image to grayscale.
-        ColorMatrix matrix = new ColorMatrix();
-        matrix.setSaturation(0);
-        ColorMatrixColorFilter filter = new ColorMatrixColorFilter(matrix);
-        imageView.setColorFilter(filter);
-
-        // Define the paint for the selection circles.
         paint = new Paint();
         paint.setAntiAlias(true);
+        paint.setDither(true);
         paint.setColor(Color.BLACK);
-
-        // Define the canvas to draw the selection on.
-        canvas = new Canvas(mutableBitmap);
-
-        // Set the touch listener.
-        imageView.setOnTouchListener(this);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeJoin(Paint.Join.ROUND);
+        paint.setStrokeCap(Paint.Cap.ROUND);
+        paint.setStrokeWidth(12);
     }
 
-    public boolean onTouch(View v, MotionEvent e) {
-        int action = e.getAction();
-        if (action == MotionEvent.ACTION_DOWN) {
-            // Get coordinates of imageView as offset.
-            int[] coordinates = new int[2];
-            imageView.getLocationOnScreen(coordinates);
+    private Paint       paint;
 
-            // Draw a circle at the tapped position.
-            float x = e.getX() - coordinates[0];
-            float y = e.getY() - coordinates[1];
-            canvas.drawCircle(x, y, 5, paint);
-            imageView.invalidate();
+    public class SelectionView extends View {
+        private Bitmap bitmap;
+        private Canvas canvas;
+        private Path path;
+        private Paint bitmapPaint;
+
+        public SelectionView(Context c) {
+            super(c);
+
+            BitmapFactory.Options myOptions = new BitmapFactory.Options();
+            myOptions.inDither = true;
+            myOptions.inScaled = false;
+            myOptions.inPreferredConfig = Bitmap.Config.ARGB_8888;
+            myOptions.inPurgeable = true;
+
+            bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.example, myOptions);
+            canvas = new Canvas(bitmap.copy(Bitmap.Config.ARGB_8888, true));
+            path = new Path();
+            bitmapPaint = new Paint(Paint.DITHER_FLAG);
         }
-        return true;
+
+        @Override
+        protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+            super.onSizeChanged(w, h, oldw, oldh);
+        }
+
+        @Override
+        protected void onDraw(Canvas canvas) {
+            //canvas.drawColor(0x0);
+            canvas.drawBitmap(bitmap, 0, 0, bitmapPaint);
+            canvas.drawPath(path, paint);
+        }
+
+        private float startX, startY;
+        private static final float TOUCH_TOLERANCE = 4;
+
+        private void touch_start(float x, float y) {
+            path.reset();
+            path.moveTo(x, y);
+            startX = x;
+            startY = y;
+        }
+        private void touch_move(float x, float y) {
+            float dx = Math.abs(x - startX);
+            float dy = Math.abs(y - startY);
+            if (dx >= TOUCH_TOLERANCE || dy >= TOUCH_TOLERANCE) {
+                path.quadTo(startX, startY, (x + startX) / 2, (y + startY) / 2);
+                startX = x;
+                startY = y;
+            }
+        }
+        private void touch_up() {
+            path.lineTo(startX, startY);
+            // commit the path to our offscreen
+            canvas.drawPath(path, paint);
+            // kill this so we don't double draw
+            path.reset();
+        }
+
+        @Override
+        public boolean onTouchEvent(MotionEvent event) {
+            float x = event.getX();
+            float y = event.getY();
+
+            switch (event.getAction()) {
+                case MotionEvent.ACTION_DOWN:
+                    touch_start(x, y);
+                    invalidate();
+                    break;
+                case MotionEvent.ACTION_MOVE:
+                    touch_move(x, y);
+                    invalidate();
+                    break;
+                case MotionEvent.ACTION_UP:
+                    touch_up();
+                    invalidate();
+                    break;
+            }
+            return true;
+        }
     }
 }
