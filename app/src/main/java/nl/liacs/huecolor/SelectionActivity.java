@@ -36,6 +36,7 @@ public class SelectionActivity extends Activity {
         private Canvas canvas;
         private Path path;
         private Paint bitmapPaint;
+        private float touchStartX, touchStartY;
         private float startX, startY; // Used for calculating new point of line
         private static final float TOUCH_TOLERANCE = 4; // Defines how quickly we should draw a line
 
@@ -95,8 +96,8 @@ public class SelectionActivity extends Activity {
             // Clear any old paths from the canvas.
             path.reset();
             path.moveTo(x, y);
-            startX = x;
-            startY = y;
+            touchStartX = startX = x;
+            touchStartY = startY = y;
         }
 
         private void touchMove(float x, float y) {
@@ -113,7 +114,7 @@ public class SelectionActivity extends Activity {
 
         private void touchUp() {
             // Finish drawing the line.
-            path.lineTo(startX, startY);
+            path.lineTo(touchStartX, touchStartY);
             canvas.drawPath(path, paint);
         }
 
