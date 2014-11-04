@@ -11,6 +11,7 @@ import android.graphics.ColorMatrixColorFilter;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.os.Bundle;
+import android.util.DisplayMetrics;
 import android.view.MotionEvent;
 import android.view.View;
 
@@ -50,6 +51,12 @@ public class SelectionActivity extends Activity {
 
             // Load the image and define the canvas on top of it.
             bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.example, options);
+
+            // Scale the image to the device by specifying its density.
+            DisplayMetrics metrics = getResources().getDisplayMetrics();
+            bitmap.setDensity((int)(metrics.density * 160f));
+
+            // Define the canvas and line path.
             canvas = new Canvas(bitmap.copy(Bitmap.Config.ARGB_8888, true));
             path = new Path();
             bitmapPaint = new Paint(Paint.DITHER_FLAG);
@@ -85,6 +92,7 @@ public class SelectionActivity extends Activity {
 
         private void touchStart(float x, float y) {
             // Start a new path when the user taps on the screen.
+            // Clear any old paths from the canvas.
             path.reset();
             path.moveTo(x, y);
             startX = x;
@@ -104,11 +112,9 @@ public class SelectionActivity extends Activity {
         }
 
         private void touchUp() {
+            // Finish drawing the line.
             path.lineTo(startX, startY);
-            // Commit the path
             canvas.drawPath(path, paint);
-            // Avoid double drawing
-            path.reset();
         }
 
         @Override
