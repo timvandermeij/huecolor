@@ -24,8 +24,12 @@
         </activity>
         <activity
             android:name="nl.liacs.huecolor.SelectionActivity"
-            android:label="@string/title_activity_selection" >
-        </activity>
+            android:label="@string/title_activity_selection"
+        />
+        <activity
+            android:name="nl.liacs.huecolor.EdgeDetectionActivity"
+            android:label="Draw Edges"
+        />
     </application>
 
 </manifest>
