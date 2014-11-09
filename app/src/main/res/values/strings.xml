@@ -3,6 +3,6 @@
     <string name="app_name">HueColor</string>
     <string name="take_camera_photo">Take photo with camera</string>
     <string name="browse_photo">Browse for photo</string>
-    <string name="title_activity_selection">Object selection</string>
     <string name="select_object">Select object</string>
+    <string name="edge_detect">Detect edges</string>
 </resources>

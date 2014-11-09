@@ -81,6 +81,16 @@ public class MainActivity extends Activity {
                 startActivity(intent);
             }
         });
+
+        // Get the button for detecting edges
+        Button edgeDetect = (Button)findViewById(R.id.edgedetect);
+        edgeDetect.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(MainActivity.this, EdgeDetectionActivity.class);
+                startActivity(intent);
+            }
+        });
     }
 
     /**
