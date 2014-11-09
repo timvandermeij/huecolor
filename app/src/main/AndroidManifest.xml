@@ -24,11 +24,11 @@
         </activity>
         <activity
             android:name="nl.liacs.huecolor.SelectionActivity"
-            android:label="@string/title_activity_selection"
+            android:label="@string/select_object"
         />
         <activity
             android:name="nl.liacs.huecolor.EdgeDetectionActivity"
-            android:label="Draw Edges"
+            android:label="@string/edge_detect"
         />
     </application>
 
