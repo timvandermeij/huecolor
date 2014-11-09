@@ -16,8 +16,7 @@ import android.widget.ProgressBar;
 public class EdgeDetectionActivity extends Activity {
     final static int KERNEL_WIDTH = 3;
     final static int KERNEL_HEIGHT = 3;
-
-    int[][] kernel = {
+    final static int[][] kernel = {
         {0, -1, 0},
         {-1, 4, -1},
         {0, -1, 0}
@@ -26,7 +25,6 @@ public class EdgeDetectionActivity extends Activity {
     Bitmap source;
     ImageView imageView;
     private ProgressBar progressBar;
-
     private Handler handler;
     Bitmap afterProcess;
 
@@ -65,7 +63,6 @@ public class EdgeDetectionActivity extends Activity {
     private Bitmap detectEdges(int[][] knl) {
         int sourceWidth = source.getWidth();
         int sourceHeight = source.getHeight();
-
         int WIDTH_MINUS_2 = sourceWidth - 2;
         int HEIGHT_MINUS_2 = sourceHeight - 2;
 
@@ -75,11 +72,13 @@ public class EdgeDetectionActivity extends Activity {
         int x = 0, y = 0;
 
         // Source bitmap pixels
-        int[] pixels = new int[sourceWidth * sourceHeight];
-        source.getPixels(pixels, 0, sourceWidth, 0, 0, sourceWidth, sourceHeight);
+        int[] sourcePixels = new int[sourceWidth * sourceHeight];
+        source.getPixels(sourcePixels, 0, sourceWidth, 0, 0, sourceWidth, sourceHeight);
 
         // Destination bitmap
-        Bitmap dest = Bitmap.createBitmap(sourceWidth, sourceHeight, source.getConfig());
+        Bitmap destination = Bitmap.createBitmap(sourceWidth, sourceHeight, source.getConfig());
+        int[] destinationPixels = new int[sourceWidth * sourceHeight];
+        destination.getPixels(destinationPixels, 0, sourceWidth, 0, 0, sourceWidth, sourceHeight);
 
         for (i = 1; i <= WIDTH_MINUS_2; i++) {
             for (j = 1; j <= HEIGHT_MINUS_2; j++) {
@@ -88,26 +87,23 @@ public class EdgeDetectionActivity extends Activity {
                     x = i - 1 + k;
                     for (l = 0; l < KERNEL_HEIGHT; l++) {
                         y = j - 1 + l;
-                        pixel = pixels[y * sourceWidth + x];
+                        pixel = sourcePixels[y * sourceWidth + x];
                         knlCache = knl[k][l];
                         subSumR += Color.red(pixel) * knlCache;
                         subSumG += Color.green(pixel) * knlCache;
                         subSumB += Color.blue(pixel) * knlCache;
                     }
                 }
-                dest.setPixel(i, j, Color.argb(
-                    Color.alpha(pixels[j * sourceWidth + i]),
-                    clamp(subSumR, 0, 255),
-                    clamp(subSumG, 0, 255),
-                    clamp(subSumB, 0, 255))
+                destinationPixels[j * sourceWidth + i] = Color.argb(
+                    Color.alpha(sourcePixels[j * sourceWidth + i]),
+                    Math.max(0, Math.min(255, subSumR)),
+                    Math.max(0, Math.min(255, subSumG)),
+                    Math.max(0, Math.min(255, subSumB))
                 );
             }
         }
-        pixels = null; // Free memory directly instead of relying on GC.
-        return dest;
-    }
-
-    private static int clamp(int value, int min, int max) {
-        return Math.max(min, Math.min(max, value));
+        destination.setPixels(destinationPixels, 0, sourceWidth, 0, 0, sourceWidth, sourceHeight);
+        sourcePixels = destinationPixels = null; // Free memory directly instead of relying on GC.
+        return destination;
     }
 }
