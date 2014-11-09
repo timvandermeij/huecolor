@@ -105,12 +105,6 @@ public class SelectionView extends View {
         canvas.drawPath(path, paint);
     }
 
-    protected void drawEdges() {
-        Context context = getContext();
-        Intent edgeIntent = new Intent(context, EdgeDetectionActivity.class);
-        context.startActivity(edgeIntent);
-    }
-
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         // Handle touch events: tap, move and finger up.
@@ -129,7 +123,7 @@ public class SelectionView extends View {
             case MotionEvent.ACTION_UP:
                 touchUp();
                 invalidate();
-                drawEdges();
+                //drawEdges();
                 break;
             default:
                 break;
