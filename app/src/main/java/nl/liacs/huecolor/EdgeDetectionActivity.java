@@ -35,7 +35,7 @@ public class EdgeDetectionActivity extends Activity {
         progressBar = (ProgressBar)findViewById(R.id.progressBar);
         progressBar.setVisibility(View.VISIBLE);
 
-        source = BitmapFactory.decodeResource(getResources(), R.drawable.ic_launcher);
+        source = BitmapFactory.decodeResource(getResources(), R.drawable.example3);
         imageView = (ImageView)findViewById(R.id.imageView);
         imageView.setImageBitmap(source);
 
