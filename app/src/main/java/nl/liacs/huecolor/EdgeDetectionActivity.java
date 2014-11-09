@@ -17,13 +17,13 @@ public class EdgeDetectionActivity extends Activity {
     final static int KERNEL_WIDTH = 3;
     final static int KERNEL_HEIGHT = 3;
 
-    int[][] kernel ={
+    int[][] kernel = {
         {0, -1, 0},
         {-1, 4, -1},
         {0, -1, 0}
     };
 
-    Bitmap bitmap_Source;
+    Bitmap source;
     ImageView imageView;
     private ProgressBar progressBar;
 
@@ -37,9 +37,9 @@ public class EdgeDetectionActivity extends Activity {
         progressBar = (ProgressBar)findViewById(R.id.progressBar);
         progressBar.setVisibility(View.VISIBLE);
 
-        bitmap_Source = BitmapFactory.decodeResource(getResources(), R.drawable.ic_launcher);
+        source = BitmapFactory.decodeResource(getResources(), R.drawable.ic_launcher);
         imageView = (ImageView)findViewById(R.id.imageView);
-        imageView.setImageBitmap(bitmap_Source);
+        imageView.setImageBitmap(source);
 
         handler = new Handler();
         startBackgroundProcess();
@@ -49,7 +49,7 @@ public class EdgeDetectionActivity extends Activity {
         Runnable runnable = new Runnable() {
             @Override
             public void run() {
-                afterProcess = processingBitmap(bitmap_Source, kernel);
+                afterProcess = detectEdges(kernel);
                 handler.post(new Runnable() {
                     @Override
                     public void run() {
@@ -62,28 +62,30 @@ public class EdgeDetectionActivity extends Activity {
         new Thread(runnable).start();
     }
 
-    private Bitmap processingBitmap(Bitmap src, int[][] knl) {
-        int sourceWidth = src.getWidth();
-        int sourceHeight = src.getHeight();
+    private Bitmap detectEdges(int[][] knl) {
+        int sourceWidth = source.getWidth();
+        int sourceHeight = source.getHeight();
 
         int WIDTH_MINUS_2 = sourceWidth - 2;
         int HEIGHT_MINUS_2 = sourceHeight - 2;
 
         int i, j, k, l; // Iterators
         int subSumR = 0, subSumG = 0, subSumB = 0;
-        int subSrcCache = 0, knlCache = 0;
-        int pixel = 0;
+        int pixel = 0, knlCache = 0;
+        int x = 0, y = 0;
 
         // Destination bitmap
-        Bitmap dest = Bitmap.createBitmap(sourceWidth, sourceHeight, src.getConfig());
+        Bitmap dest = Bitmap.createBitmap(sourceWidth, sourceHeight, source.getConfig());
 
         for (i = 1; i <= WIDTH_MINUS_2; i++) {
             for (j = 1; j <= HEIGHT_MINUS_2; j++) {
                 // Calculate subSumRGB = subSrc[][] * knl[][]
                 subSumR = subSumG = subSumB = 0;
                 for (k = 0; k < KERNEL_WIDTH; k++) {
+                    x = i - 1 + k;
                     for (l = 0; l < KERNEL_HEIGHT; l++) {
-                        pixel = src.getPixel(i - 1 + k, j - 1 + l);
+                        y = j - 1 + l;
+                        pixel = source.getPixel(x, y);
                         knlCache = knl[k][l];
                         subSumR += Color.red(pixel) * knlCache;
                         subSumG += Color.green(pixel) * knlCache;
@@ -96,7 +98,7 @@ public class EdgeDetectionActivity extends Activity {
                 subSumB = clamp(subSumB, 0, 255);
 
                 dest.setPixel(i, j, Color.argb(
-                    Color.alpha(src.getPixel(i, j)),
+                    Color.alpha(source.getPixel(i, j)),
                     subSumR,
                     subSumG,
                     subSumB)
