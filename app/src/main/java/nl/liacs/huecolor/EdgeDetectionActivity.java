@@ -89,16 +89,16 @@ public class EdgeDetectionActivity extends Activity {
                         y = j - 1 + l;
                         pixel = sourcePixels[y * sourceWidth + x];
                         knlCache = knl[k][l];
-                        subSumR += Color.red(pixel) * knlCache;
-                        subSumG += Color.green(pixel) * knlCache;
-                        subSumB += Color.blue(pixel) * knlCache;
+                        subSumR += ((pixel >> 16) & 0xFF) * knlCache; // Red component
+                        subSumG += ((pixel >> 8) & 0xFF) * knlCache; // Green component
+                        subSumB += (pixel & 0xFF) * knlCache; // Blue component
                     }
                 }
                 destinationPixels[j * sourceWidth + i] = Color.argb(
-                    Color.alpha(sourcePixels[j * sourceWidth + i]),
-                    Math.max(0, Math.min(255, subSumR)),
-                    Math.max(0, Math.min(255, subSumG)),
-                    Math.max(0, Math.min(255, subSumB))
+                    sourcePixels[j * sourceWidth + i] >>> 24, // Alpha component
+                    subSumR < 0 ? 0 : (subSumR > 255 ? 255 :subSumR),
+                    subSumG < 0 ? 0 : (subSumG > 255 ? 255 :subSumG),
+                    subSumB < 0 ? 0 : (subSumB > 255 ? 255 :subSumB)
                 );
             }
         }
