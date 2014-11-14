@@ -26,10 +26,6 @@
             android:name="nl.liacs.huecolor.SelectionActivity"
             android:label="@string/select_object"
         />
-        <activity
-            android:name="nl.liacs.huecolor.EdgeDetectionActivity"
-            android:label="@string/edge_detect"
-        />
     </application>
 
 </manifest>

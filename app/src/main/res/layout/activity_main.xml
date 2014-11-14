@@ -31,13 +31,4 @@
         android:layout_alignParentLeft="true"
         android:layout_alignParentRight="true" />
 
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/edge_detect"
-        android:id="@+id/edgedetect"
-        android:layout_below="@+id/select_object"
-        android:layout_alignRight="@+id/select_object"
-        android:layout_alignParentLeft="true" />
-
 </RelativeLayout>

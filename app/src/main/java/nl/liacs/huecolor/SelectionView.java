@@ -1,7 +1,6 @@
 package nl.liacs.huecolor;
 
 import android.content.Context;
-import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
@@ -18,6 +17,7 @@ import android.view.View;
  * Custom view for showing a grayscale image and drawing a path on the image.
  */
 public class SelectionView extends View {
+    // Canvas and drawing constants
     private Paint paint;
     private Bitmap bitmap;
     private Canvas canvas;
@@ -26,6 +26,16 @@ public class SelectionView extends View {
     private float touchStartX, touchStartY;
     private float startX, startY; // Used for calculating new point of line
     private static final float TOUCH_TOLERANCE = 4; // Defines how quickly we should draw a line
+
+    // Edge detection constants
+    private Bitmap edgeBitmap;
+    private final static int KERNEL_WIDTH = 3;
+    private final static int KERNEL_HEIGHT = 3;
+    private final static int[][] kernel = {
+        {0, -1, 0},
+        {-1, 4, -1},
+        {0, -1, 0}
+    };
 
     public SelectionView(Context context) {
         super(context);
@@ -64,6 +74,9 @@ public class SelectionView extends View {
         matrix.setSaturation(0);
         ColorMatrixColorFilter filter = new ColorMatrixColorFilter(matrix);
         bitmapPaint.setColorFilter(filter);
+
+        // Start edge detection in the background
+        startEdgeDetection();
     }
 
     @Override
@@ -123,11 +136,70 @@ public class SelectionView extends View {
             case MotionEvent.ACTION_UP:
                 touchUp();
                 invalidate();
-                //drawEdges();
                 break;
             default:
                 break;
         }
         return true;
+    }
+
+    private void startEdgeDetection() {
+        Runnable runnable = new Runnable() {
+            @Override
+            public void run() {
+                edgeBitmap = detectEdges(kernel);
+            }
+        };
+        new Thread(runnable).start();
+    }
+
+    /*
+     * Based on http://android-coding.blogspot.nl/2012/05/android-image-processing-edge-detect.html
+     */
+    private Bitmap detectEdges(int[][] knl) {
+        int sourceWidth = bitmap.getWidth();
+        int sourceHeight = bitmap.getHeight();
+        int WIDTH_MINUS_2 = sourceWidth - 2;
+        int HEIGHT_MINUS_2 = sourceHeight - 2;
+
+        int i, j, k, l; // Iterators
+        int subSumR = 0, subSumG = 0, subSumB = 0;
+        int pixel = 0, knlCache = 0;
+        int x = 0, y = 0;
+
+        // Source bitmap pixels
+        int[] sourcePixels = new int[sourceWidth * sourceHeight];
+        bitmap.getPixels(sourcePixels, 0, sourceWidth, 0, 0, sourceWidth, sourceHeight);
+
+        // Destination bitmap
+        Bitmap destination = Bitmap.createBitmap(sourceWidth, sourceHeight, bitmap.getConfig());
+        int[] destinationPixels = new int[sourceWidth * sourceHeight];
+        destination.getPixels(destinationPixels, 0, sourceWidth, 0, 0, sourceWidth, sourceHeight);
+
+        for (i = 1; i <= WIDTH_MINUS_2; i++) {
+            for (j = 1; j <= HEIGHT_MINUS_2; j++) {
+                subSumR = subSumG = subSumB = 0;
+                for (k = 0; k < KERNEL_WIDTH; k++) {
+                    x = i - 1 + k;
+                    for (l = 0; l < KERNEL_HEIGHT; l++) {
+                        y = j - 1 + l;
+                        pixel = sourcePixels[y * sourceWidth + x];
+                        knlCache = knl[k][l];
+                        subSumR += ((pixel >> 16) & 0xFF) * knlCache; // Red component
+                        subSumG += ((pixel >> 8) & 0xFF) * knlCache; // Green component
+                        subSumB += (pixel & 0xFF) * knlCache; // Blue component
+                    }
+                }
+                destinationPixels[j * sourceWidth + i] = Color.argb(
+                    sourcePixels[j * sourceWidth + i] >>> 24, // Alpha component
+                    subSumR < 0 ? 0 : (subSumR > 255 ? 255 :subSumR),
+                    subSumG < 0 ? 0 : (subSumG > 255 ? 255 :subSumG),
+                    subSumB < 0 ? 0 : (subSumB > 255 ? 255 :subSumB)
+                );
+            }
+        }
+        destination.setPixels(destinationPixels, 0, sourceWidth, 0, 0, sourceWidth, sourceHeight);
+        sourcePixels = destinationPixels = null; // Free memory directly instead of relying on GC.
+        return destination;
     }
 }
