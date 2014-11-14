@@ -24,12 +24,13 @@ public class SelectionView extends View {
     private Paint paint;
     private Bitmap bitmap;
     private Canvas canvas;
-    private Path path;
+    private Path path, newPath = new Path();
     private Paint bitmapPaint;
     private float touchStartX, touchStartY;
     private float startX, startY; // Used for calculating new point of line
     private static final float TOUCH_TOLERANCE = 4; // Defines how quickly we should draw a line
     private ArrayList<PointF> pointsList = new ArrayList<PointF>();
+    private ArrayList<PointF> edgePointsList = new ArrayList<PointF>();
 
     // Edge detection constants
     private Bitmap edgeBitmap;
@@ -52,7 +53,7 @@ public class SelectionView extends View {
         options.inPurgeable = true;
 
         // Load the image and define the canvas on top of it.
-        bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.example, options);
+        bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.example2, options);
 
         // Scale the image to the device by specifying its density.
         DisplayMetrics metrics = getResources().getDisplayMetrics();
@@ -123,6 +124,7 @@ public class SelectionView extends View {
         // Finish drawing the line.
         path.lineTo(touchStartX, touchStartY);
         canvas.drawPath(path, paint);
+        adjustPath();
     }
 
     @Override
@@ -197,16 +199,82 @@ public class SelectionView extends View {
                         subSumB += (pixel & 0xFF) * knlCache; // Blue component
                     }
                 }
+                subSumR = (subSumR < 0 ? 0 : (subSumR > 255 ? 255 : subSumR));
+                subSumG = (subSumG < 0 ? 0 : (subSumG > 255 ? 255 : subSumG));
+                subSumB = (subSumB < 0 ? 0 : (subSumB > 255 ? 255 : subSumB));
+
+                // Keep track of the points that are on edges.
+                if (subSumR > 0 && subSumB > 0 && subSumG > 0) {
+                    edgePointsList.add(new PointF(i,j));
+                }
+
                 destinationPixels[j * sourceWidth + i] = Color.argb(
                     sourcePixels[j * sourceWidth + i] >>> 24, // Alpha component
-                    subSumR < 0 ? 0 : (subSumR > 255 ? 255 :subSumR),
-                    subSumG < 0 ? 0 : (subSumG > 255 ? 255 :subSumG),
-                    subSumB < 0 ? 0 : (subSumB > 255 ? 255 :subSumB)
+                    subSumR,
+                    subSumG,
+                    subSumB
                 );
             }
         }
         destination.setPixels(destinationPixels, 0, sourceWidth, 0, 0, sourceWidth, sourceHeight);
         sourcePixels = destinationPixels = null; // Free memory directly instead of relying on GC.
         return destination;
+    }
+
+    private void adjustPath() {
+        // We want to move each point in the points list to the nearest edge pixel.
+        PointF point, edgePoint;
+        float x = 0, y = 0, minX = 0, minY = 0;
+        double distance = Double.POSITIVE_INFINITY, minDistance = Double.POSITIVE_INFINITY;
+
+        for (int i = 0; i < pointsList.size(); i++) {
+            point = pointsList.get(i);
+
+            // Check if the point already happens to be on an edge.
+            if (edgePointsList.contains(point)) {
+                continue;
+            }
+
+            // Otherwise find the edge with the least distance from the point.
+            for (int j = 0; j < edgePointsList.size(); j++) {
+                edgePoint = edgePointsList.get(i);
+                x = edgePoint.x - point.x;
+                y = edgePoint.y - point.y;
+                distance = Math.sqrt(x*x + y*y);
+
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    minX = edgePoint.x;
+                    minY = edgePoint.y;
+                }
+            }
+
+            // We have found the nearest edge point. Move the point towards that edge point.
+            point.set(minX, minY);
+
+            // Reset the values for the next iteration.
+            minX = minY = 0;
+            minDistance = Double.POSITIVE_INFINITY;
+        }
+
+        // Draw the first point of the new path.
+        path.reset();
+        newPath.reset();
+        point = pointsList.get(0);
+        startX = x = point.x;
+        startY = y = point.y;
+        newPath.moveTo(x, y);
+
+        // Draw the rest of the points of the new path.
+        for (int k = 1; k < pointsList.size(); k++) {
+            point = pointsList.get(k);
+            path.quadTo(x, y, point.x, point.y);
+            x = point.x;
+            y = point.y;
+        }
+
+        // Finish drawing the line.
+        newPath.lineTo(startX, startY);
+        canvas.drawPath(newPath, paint);
     }
 }
