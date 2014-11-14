@@ -9,9 +9,12 @@ import android.graphics.ColorMatrix;
 import android.graphics.ColorMatrixColorFilter;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.graphics.PointF;
 import android.util.DisplayMetrics;
 import android.view.MotionEvent;
 import android.view.View;
+
+import java.util.ArrayList;
 
 /**
  * Custom view for showing a grayscale image and drawing a path on the image.
@@ -26,6 +29,7 @@ public class SelectionView extends View {
     private float touchStartX, touchStartY;
     private float startX, startY; // Used for calculating new point of line
     private static final float TOUCH_TOLERANCE = 4; // Defines how quickly we should draw a line
+    private ArrayList<PointF> pointsList = new ArrayList<PointF>();
 
     // Edge detection constants
     private Bitmap edgeBitmap;
@@ -96,6 +100,8 @@ public class SelectionView extends View {
         // Clear any old paths from the canvas.
         path.reset();
         path.moveTo(x, y);
+        pointsList.clear();
+        pointsList.add(new PointF(x,y));
         touchStartX = startX = x;
         touchStartY = startY = y;
     }
@@ -107,6 +113,7 @@ public class SelectionView extends View {
         float dy = Math.abs(y - startY);
         if (dx >= TOUCH_TOLERANCE || dy >= TOUCH_TOLERANCE) {
             path.quadTo(startX, startY, (x + startX) / 2, (y + startY) / 2);
+            pointsList.add(new PointF(x,y));
             startX = x;
             startY = y;
         }
