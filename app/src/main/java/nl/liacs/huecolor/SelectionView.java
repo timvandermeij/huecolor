@@ -35,7 +35,6 @@ public class SelectionView extends View {
 
     // Edge detection constants
     private ArrayList<PointF> edgePointsList = new ArrayList<PointF>();
-    private Bitmap edgeBitmap;
     private final static int KERNEL_WIDTH = 3;
     private final static int KERNEL_HEIGHT = 3;
     private final static int EDGE_THRESHOLD = 8;
@@ -161,7 +160,7 @@ public class SelectionView extends View {
         Runnable runnable = new Runnable() {
             @Override
             public void run() {
-                edgeBitmap = detectEdges(kernel);
+                detectEdges(kernel);
             }
         };
         new Thread(runnable).start();
@@ -170,7 +169,7 @@ public class SelectionView extends View {
     /*
      * Based on http://android-coding.blogspot.nl/2012/05/android-image-processing-edge-detect.html
      */
-    private Bitmap detectEdges(int[][] knl) {
+    private void detectEdges(int[][] knl) {
         int sourceWidth = bitmap.getWidth();
         int sourceHeight = bitmap.getHeight();
         int WIDTH_MINUS_2 = sourceWidth - 2;
@@ -184,11 +183,6 @@ public class SelectionView extends View {
         // Source bitmap pixels
         int[] sourcePixels = new int[sourceWidth * sourceHeight];
         bitmap.getPixels(sourcePixels, 0, sourceWidth, 0, 0, sourceWidth, sourceHeight);
-
-        // Destination bitmap
-        Bitmap destination = Bitmap.createBitmap(sourceWidth, sourceHeight, bitmap.getConfig());
-        int[] destinationPixels = new int[sourceWidth * sourceHeight];
-        destination.getPixels(destinationPixels, 0, sourceWidth, 0, 0, sourceWidth, sourceHeight);
 
         for (i = 1; i <= WIDTH_MINUS_2; i++) {
             for (j = 1; j <= HEIGHT_MINUS_2; j++) {
@@ -212,18 +206,9 @@ public class SelectionView extends View {
                 if (subSumR > EDGE_THRESHOLD || subSumB > EDGE_THRESHOLD || subSumG > EDGE_THRESHOLD) {
                     edgePointsList.add(new PointF(i,j));
                 }
-
-                destinationPixels[j * sourceWidth + i] = Color.argb(
-                    sourcePixels[j * sourceWidth + i] >>> 24, // Alpha component
-                    subSumR,
-                    subSumG,
-                    subSumB
-                );
             }
         }
-        destination.setPixels(destinationPixels, 0, sourceWidth, 0, 0, sourceWidth, sourceHeight);
-        sourcePixels = destinationPixels = null; // Free memory directly instead of relying on GC.
-        return destination;
+        sourcePixels = null; // Free memory directly instead of relying on GC.
     }
 
     private void adjustPath() {
@@ -231,8 +216,9 @@ public class SelectionView extends View {
         PointF point, edgePoint;
         float x = 0, y = 0, minX = 0, minY = 0;
         double distance = Double.POSITIVE_INFINITY, minDistance = Double.POSITIVE_INFINITY;
+        int pointListSize = pointsList.size(), edgePointListSize = edgePointsList.size();
 
-        for (int i = 0; i < pointsList.size(); i++) {
+        for (int i = 0; i < pointListSize; i++) {
             point = pointsList.get(i);
 
             // Check if the point already happens to be on an edge.
@@ -241,7 +227,7 @@ public class SelectionView extends View {
             }
 
             // Otherwise find the edge with the least distance from the point.
-            for (int j = 0; j < edgePointsList.size(); j++) {
+            for (int j = 0; j < edgePointListSize; j++) {
                 edgePoint = edgePointsList.get(j);
 
                 // Calculate the distance from the point to this edge point.
@@ -273,7 +259,7 @@ public class SelectionView extends View {
         path.moveTo(x, y);
 
         // Draw the rest of the points of the new path.
-        for (int k = 1; k < pointsList.size(); k++) {
+        for (int k = 1; k < pointListSize; k++) {
             point = pointsList.get(k);
             path.quadTo(x, y, point.x, point.y);
             x = point.x;
