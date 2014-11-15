@@ -10,6 +10,7 @@ import android.graphics.ColorMatrixColorFilter;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.PointF;
+import android.os.Handler;
 import android.util.DisplayMetrics;
 import android.view.MotionEvent;
 import android.view.View;
@@ -43,6 +44,8 @@ public class SelectionView extends View {
         {-1, 4, -1},
         {0, -1, 0}
     };
+
+    private Handler handler = new Handler();
 
     public SelectionView(Context context) {
         super(context);
@@ -128,7 +131,7 @@ public class SelectionView extends View {
         // Adjust the path using the edge detection data afterward.
         path.lineTo(touchStartX, touchStartY);
         canvas.drawPath(path, paint);
-        adjustPath();
+        startAdjustPath();
     }
 
     @Override
@@ -169,7 +172,7 @@ public class SelectionView extends View {
     /*
      * Based on http://android-coding.blogspot.nl/2012/05/android-image-processing-edge-detect.html
      */
-    private void detectEdges(int[][] knl) {
+    private void detectEdges(final int[][] knl) {
         int sourceWidth = bitmap.getWidth();
         int sourceHeight = bitmap.getHeight();
         int WIDTH_MINUS_2 = sourceWidth - 2;
@@ -209,6 +212,23 @@ public class SelectionView extends View {
             }
         }
         sourcePixels = null; // Free memory directly instead of relying on GC.
+    }
+
+    private void startAdjustPath() {
+        // Run path adjust using edge detection as a background process.
+        Runnable runnable = new Runnable() {
+            @Override
+            public void run() {
+                adjustPath();
+                handler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        invalidate();
+                    }
+                });
+            }
+        };
+        new Thread(runnable).start();
     }
 
     private void adjustPath() {
@@ -268,6 +288,5 @@ public class SelectionView extends View {
 
         // Finish drawing the line.
         path.lineTo(startX, startY);
-        canvas.drawPath(path, paint);
     }
 }
