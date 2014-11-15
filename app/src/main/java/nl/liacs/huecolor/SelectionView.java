@@ -36,6 +36,7 @@ public class SelectionView extends View {
     private Bitmap edgeBitmap;
     private final static int KERNEL_WIDTH = 3;
     private final static int KERNEL_HEIGHT = 3;
+    private final static int EDGE_THRESHOLD = 5;
     private final static int[][] kernel = {
         {0, -1, 0},
         {-1, 4, -1},
@@ -68,7 +69,7 @@ public class SelectionView extends View {
         paint = new Paint();
         paint.setAntiAlias(true);
         paint.setDither(true);
-        paint.setColor(Color.BLACK);
+        paint.setColor(Color.RED);
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeJoin(Paint.Join.ROUND);
         paint.setStrokeCap(Paint.Cap.ROUND);
@@ -204,7 +205,7 @@ public class SelectionView extends View {
                 subSumB = (subSumB < 0 ? 0 : (subSumB > 255 ? 255 : subSumB));
 
                 // Keep track of the points that are on edges.
-                if (subSumR > 0 && subSumB > 0 && subSumG > 0) {
+                if (subSumR > EDGE_THRESHOLD || subSumB > EDGE_THRESHOLD || subSumG > EDGE_THRESHOLD) {
                     edgePointsList.add(new PointF(i,j));
                 }
 
@@ -237,7 +238,8 @@ public class SelectionView extends View {
 
             // Otherwise find the edge with the least distance from the point.
             for (int j = 0; j < edgePointsList.size(); j++) {
-                edgePoint = edgePointsList.get(i);
+                edgePoint = edgePointsList.get(j);
+
                 x = edgePoint.x - point.x;
                 y = edgePoint.y - point.y;
                 distance = Math.sqrt(x*x + y*y);
