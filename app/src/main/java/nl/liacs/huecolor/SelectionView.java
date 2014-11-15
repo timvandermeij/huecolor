@@ -24,7 +24,7 @@ public class SelectionView extends View {
     private Paint paint;
     private Bitmap bitmap;
     private Canvas canvas;
-    private Path path, newPath = new Path();
+    private Path path;
     private Paint bitmapPaint;
     private float touchStartX, touchStartY;
     private float startX, startY; // Used for calculating new point of line
@@ -36,7 +36,7 @@ public class SelectionView extends View {
     private Bitmap edgeBitmap;
     private final static int KERNEL_WIDTH = 3;
     private final static int KERNEL_HEIGHT = 3;
-    private final static int EDGE_THRESHOLD = 5;
+    private final static int EDGE_THRESHOLD = 8;
     private final static int[][] kernel = {
         {0, -1, 0},
         {-1, 4, -1},
@@ -73,7 +73,7 @@ public class SelectionView extends View {
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeJoin(Paint.Join.ROUND);
         paint.setStrokeCap(Paint.Cap.ROUND);
-        paint.setStrokeWidth(10);
+        paint.setStrokeWidth(8);
 
         // Convert the image to grayscale.
         ColorMatrix matrix = new ColorMatrix();
@@ -261,11 +261,10 @@ public class SelectionView extends View {
 
         // Draw the first point of the new path.
         path.reset();
-        newPath.reset();
         point = pointsList.get(0);
         startX = x = point.x;
         startY = y = point.y;
-        newPath.moveTo(x, y);
+        path.moveTo(x, y);
 
         // Draw the rest of the points of the new path.
         for (int k = 1; k < pointsList.size(); k++) {
@@ -276,7 +275,7 @@ public class SelectionView extends View {
         }
 
         // Finish drawing the line.
-        newPath.lineTo(startX, startY);
-        canvas.drawPath(newPath, paint);
+        path.lineTo(startX, startY);
+        canvas.drawPath(path, paint);
     }
 }
