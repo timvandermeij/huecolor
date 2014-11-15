@@ -20,19 +20,21 @@ import java.util.ArrayList;
  * Custom view for showing a grayscale image and drawing a path on the image.
  */
 public class SelectionView extends View {
-    // Canvas and drawing constants
-    private Paint paint;
-    private Bitmap bitmap;
+    // Canvas
     private Canvas canvas;
+    private Bitmap bitmap;
+    private Paint grayscaleFilter;
+
+    // Drawing
+    private Paint paint;
     private Path path;
-    private Paint bitmapPaint;
-    private float touchStartX, touchStartY;
+    private float touchStartX, touchStartY; // Used for closing an incomplete path
     private float startX, startY; // Used for calculating new point of line
     private static final float TOUCH_TOLERANCE = 4; // Defines how quickly we should draw a line
-    private ArrayList<PointF> pointsList = new ArrayList<PointF>();
-    private ArrayList<PointF> edgePointsList = new ArrayList<PointF>();
+    private ArrayList<PointF> pointsList = new ArrayList<PointF>(); // List of points in the path
 
     // Edge detection constants
+    private ArrayList<PointF> edgePointsList = new ArrayList<PointF>();
     private Bitmap edgeBitmap;
     private final static int KERNEL_WIDTH = 3;
     private final static int KERNEL_HEIGHT = 3;
@@ -63,7 +65,6 @@ public class SelectionView extends View {
         // Define the canvas and line path.
         canvas = new Canvas(bitmap.copy(Bitmap.Config.ARGB_8888, true));
         path = new Path();
-        bitmapPaint = new Paint(Paint.DITHER_FLAG);
 
         // Define the paint for the selection line.
         paint = new Paint();
@@ -79,9 +80,10 @@ public class SelectionView extends View {
         ColorMatrix matrix = new ColorMatrix();
         matrix.setSaturation(0);
         ColorMatrixColorFilter filter = new ColorMatrixColorFilter(matrix);
-        bitmapPaint.setColorFilter(filter);
+        grayscaleFilter = new Paint(Paint.DITHER_FLAG);
+        grayscaleFilter.setColorFilter(filter);
 
-        // Start edge detection in the background
+        // Start edge detection as a background process.
         startEdgeDetection();
     }
 
@@ -93,13 +95,13 @@ public class SelectionView extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         // Update the previous path and draw the new path.
-        canvas.drawBitmap(bitmap, 0, 0, bitmapPaint);
+        canvas.drawBitmap(bitmap, 0, 0, grayscaleFilter);
         canvas.drawPath(path, paint);
     }
 
     private void touchStart(float x, float y) {
         // Start a new path when the user taps on the screen.
-        // Clear any old paths from the canvas.
+        // Clear any old path from the canvas.
         path.reset();
         path.moveTo(x, y);
         pointsList.clear();
@@ -113,6 +115,7 @@ public class SelectionView extends View {
         // Sensitivity is added for the sake of performance.
         float dx = Math.abs(x - startX);
         float dy = Math.abs(y - startY);
+
         if (dx >= TOUCH_TOLERANCE || dy >= TOUCH_TOLERANCE) {
             path.quadTo(startX, startY, (x + startX) / 2, (y + startY) / 2);
             pointsList.add(new PointF(x,y));
@@ -122,7 +125,8 @@ public class SelectionView extends View {
     }
 
     private void touchUp() {
-        // Finish drawing the line.
+        // Finish drawing the line and connect an unclosed path.
+        // Adjust the path using the edge detection data afterward.
         path.lineTo(touchStartX, touchStartY);
         canvas.drawPath(path, paint);
         adjustPath();
@@ -130,20 +134,19 @@ public class SelectionView extends View {
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        // Handle touch events: tap, move and finger up.
         float x = event.getX();
         float y = event.getY();
 
         switch (event.getAction()) {
-            case MotionEvent.ACTION_DOWN:
+            case MotionEvent.ACTION_DOWN: // Finger tap
                 touchStart(x, y);
                 invalidate();
                 break;
-            case MotionEvent.ACTION_MOVE:
+            case MotionEvent.ACTION_MOVE: // Finger move
                 touchMove(x, y);
                 invalidate();
                 break;
-            case MotionEvent.ACTION_UP:
+            case MotionEvent.ACTION_UP: // Finger up
                 touchUp();
                 invalidate();
                 break;
@@ -154,6 +157,7 @@ public class SelectionView extends View {
     }
 
     private void startEdgeDetection() {
+        // Run edge detection on the bitmap as a background process.
         Runnable runnable = new Runnable() {
             @Override
             public void run() {
@@ -240,10 +244,12 @@ public class SelectionView extends View {
             for (int j = 0; j < edgePointsList.size(); j++) {
                 edgePoint = edgePointsList.get(j);
 
+                // Calculate the distance from the point to this edge point.
                 x = edgePoint.x - point.x;
                 y = edgePoint.y - point.y;
                 distance = Math.sqrt(x*x + y*y);
 
+                // Use this edge point if it is closer than any other edge point.
                 if (distance < minDistance) {
                     minDistance = distance;
                     minX = edgePoint.x;
