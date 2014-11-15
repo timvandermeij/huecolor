@@ -16,6 +16,7 @@ import android.view.MotionEvent;
 import android.view.View;
 
 import java.util.ArrayList;
+import java.util.ConcurrentModificationException;
 
 /**
  * Custom view for showing a grayscale image and drawing a path on the image.
@@ -46,6 +47,7 @@ public class SelectionView extends View {
     };
 
     private Handler handler = new Handler();
+    private Thread adjustPathThread = null;
 
     public SelectionView(Context context) {
         super(context);
@@ -104,6 +106,10 @@ public class SelectionView extends View {
     private void touchStart(float x, float y) {
         // Start a new path when the user taps on the screen.
         // Clear any old path from the canvas.
+        if (adjustPathThread != null) {
+            adjustPathThread.interrupt();
+            adjustPathThread = null;
+        }
         path.reset();
         path.moveTo(x, y);
         pointsList.clear();
@@ -225,64 +231,71 @@ public class SelectionView extends View {
                     @Override
                     public void run() {
                         invalidate();
+                        adjustPathThread = null;
                     }
                 });
             }
         };
-        new Thread(runnable).start();
+        adjustPathThread = new Thread(runnable);
+        adjustPathThread.start();
     }
 
     private void adjustPath() {
-        // We want to move each point in the points list to the nearest edge pixel.
-        float x = 0, y = 0, minX = 0, minY = 0;
-        double distance = Double.POSITIVE_INFINITY, minDistance = Double.POSITIVE_INFINITY;
-        int pointListSize = pointsList.size();
+        try {
+            // We want to move each point in the points list to the nearest edge pixel.
+            float x = 0, y = 0, minX = 0, minY = 0;
+            double distance = Double.POSITIVE_INFINITY, minDistance = Double.POSITIVE_INFINITY;
+            int pointListSize = pointsList.size();
 
-        for (PointF point : pointsList) {
-            // Check if the point already happens to be on an edge.
-            if (edgePointsList.contains(point)) {
-                continue;
-            }
-
-            // Otherwise find the edge with the least distance from the point.
-            for (PointF edgePoint : edgePointsList) {
-                // Calculate the distance from the point to this edge point.
-                x = edgePoint.x - point.x;
-                y = edgePoint.y - point.y;
-                distance = Math.sqrt(x * x + y * y);
-
-                // Use this edge point if it is closer than any other edge point.
-                if (distance < minDistance) {
-                    minDistance = distance;
-                    minX = edgePoint.x;
-                    minY = edgePoint.y;
+            for (PointF point : pointsList) {
+                // Check if the point already happens to be on an edge.
+                if (edgePointsList.contains(point)) {
+                    continue;
                 }
+
+                // Otherwise find the edge with the least distance from the point.
+                for (PointF edgePoint : edgePointsList) {
+                    // Calculate the distance from the point to this edge point.
+                    x = edgePoint.x - point.x;
+                    y = edgePoint.y - point.y;
+                    distance = Math.sqrt(x * x + y * y);
+
+                    // Use this edge point if it is closer than any other edge point.
+                    if (distance < minDistance) {
+                        minDistance = distance;
+                        minX = edgePoint.x;
+                        minY = edgePoint.y;
+                    }
+                }
+
+                // We have found the nearest edge point. Move the point towards that edge point.
+                point.set(minX, minY);
+
+                // Reset the values for the next iteration.
+                minX = minY = 0;
+                minDistance = Double.POSITIVE_INFINITY;
             }
 
-            // We have found the nearest edge point. Move the point towards that edge point.
-            point.set(minX, minY);
+            // Draw the first point of the new path.
+            path.reset();
+            PointF point = pointsList.get(0);
+            startX = x = point.x;
+            startY = y = point.y;
+            path.moveTo(x, y);
 
-            // Reset the values for the next iteration.
-            minX = minY = 0;
-            minDistance = Double.POSITIVE_INFINITY;
+            // Draw the rest of the points of the new path.
+            for (int k = 1; k < pointListSize; k++) {
+                point = pointsList.get(k);
+                path.quadTo(x, y, (point.x + x) / 2, (point.y + y) / 2);
+                x = point.x;
+                y = point.y;
+            }
+
+            // Finish drawing the line.
+            path.lineTo(startX, startY);
         }
-
-        // Draw the first point of the new path.
-        path.reset();
-        PointF point = pointsList.get(0);
-        startX = x = point.x;
-        startY = y = point.y;
-        path.moveTo(x, y);
-
-        // Draw the rest of the points of the new path.
-        for (int k = 1; k < pointListSize; k++) {
-            point = pointsList.get(k);
-            path.quadTo(x, y, (point.x + x) / 2, (point.y + y) / 2);
-            x = point.x;
-            y = point.y;
+        catch (ConcurrentModificationException e) {
+            // Ignore the exception and let the concurrent access handle everything.
         }
-
-        // Finish drawing the line.
-        path.lineTo(startX, startY);
     }
 }
