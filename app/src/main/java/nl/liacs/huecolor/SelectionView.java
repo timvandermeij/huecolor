@@ -281,7 +281,7 @@ public class SelectionView extends View {
         // Draw the rest of the points of the new path.
         for (int k = 1; k < pointListSize; k++) {
             point = pointsList.get(k);
-            path.quadTo(x, y, point.x, point.y);
+            path.quadTo(x, y, (point.x + x) / 2, (point.y + y) / 2);
             x = point.x;
             y = point.y;
         }
