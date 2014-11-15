@@ -172,6 +172,7 @@ public class SelectionView extends View {
     /*
      * Based on http://android-coding.blogspot.nl/2012/05/android-image-processing-edge-detect.html
      */
+    @SuppressWarnings("UnusedAssignment")
     private void detectEdges(final int[][] knl) {
         int sourceWidth = bitmap.getWidth();
         int sourceHeight = bitmap.getHeight();
@@ -179,7 +180,7 @@ public class SelectionView extends View {
         int HEIGHT_MINUS_2 = sourceHeight - 2;
 
         int i, j, k, l; // Iterators
-        int subSumR = 0, subSumG = 0, subSumB = 0;
+        int subSumR = 0, subSumG = 0, subSumB = 0; // Color components
         int pixel = 0, knlCache = 0;
         int x = 0, y = 0;
 
@@ -233,27 +234,22 @@ public class SelectionView extends View {
 
     private void adjustPath() {
         // We want to move each point in the points list to the nearest edge pixel.
-        PointF point, edgePoint;
         float x = 0, y = 0, minX = 0, minY = 0;
         double distance = Double.POSITIVE_INFINITY, minDistance = Double.POSITIVE_INFINITY;
-        int pointListSize = pointsList.size(), edgePointListSize = edgePointsList.size();
+        int pointListSize = pointsList.size();
 
-        for (int i = 0; i < pointListSize; i++) {
-            point = pointsList.get(i);
-
+        for (PointF point : pointsList) {
             // Check if the point already happens to be on an edge.
             if (edgePointsList.contains(point)) {
                 continue;
             }
 
             // Otherwise find the edge with the least distance from the point.
-            for (int j = 0; j < edgePointListSize; j++) {
-                edgePoint = edgePointsList.get(j);
-
+            for (PointF edgePoint : edgePointsList) {
                 // Calculate the distance from the point to this edge point.
                 x = edgePoint.x - point.x;
                 y = edgePoint.y - point.y;
-                distance = Math.sqrt(x*x + y*y);
+                distance = Math.sqrt(x * x + y * y);
 
                 // Use this edge point if it is closer than any other edge point.
                 if (distance < minDistance) {
@@ -273,7 +269,7 @@ public class SelectionView extends View {
 
         // Draw the first point of the new path.
         path.reset();
-        point = pointsList.get(0);
+        PointF point = pointsList.get(0);
         startX = x = point.x;
         startY = y = point.y;
         path.moveTo(x, y);
