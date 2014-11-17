@@ -18,9 +18,7 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 
-import java.io.BufferedInputStream;
 import java.io.FileDescriptor;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.ConcurrentModificationException;
@@ -29,8 +27,10 @@ import java.util.ConcurrentModificationException;
  * Custom view for showing a grayscale image and drawing a path on the image.
  */
 public class SelectionView extends View {
+    private Uri fileUri;
+
     // Canvas
-    private Canvas canvas;
+    private Canvas canvas = null;
     private Bitmap bitmap = null;
     private Paint grayscaleFilter;
 
@@ -56,9 +56,37 @@ public class SelectionView extends View {
     private Handler handler = new Handler();
     private Thread adjustPathThread = null;
 
+    public SelectionView(Context context) {
+        this(context, null);
+    }
+
     public SelectionView(Context context, Uri fileUri) {
         super(context);
+        this.fileUri = fileUri;
 
+        path = new Path();
+
+        // Define the paint for the selection line.
+        paint = new Paint();
+        paint.setAntiAlias(true);
+        paint.setDither(true);
+        paint.setColor(Color.RED);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeJoin(Paint.Join.ROUND);
+        paint.setStrokeCap(Paint.Cap.ROUND);
+        paint.setStrokeWidth(8);
+
+        // Convert the image to grayscale.
+        ColorMatrix matrix = new ColorMatrix();
+        matrix.setSaturation(0);
+        ColorMatrixColorFilter filter = new ColorMatrixColorFilter(matrix);
+        grayscaleFilter = new Paint(Paint.DITHER_FLAG);
+        grayscaleFilter.setColorFilter(filter);
+    }
+
+    @Override
+    protected void onSizeChanged(int w, int h, int oldWidth, int oldHeight) {
+        super.onSizeChanged(w, h, oldWidth, oldHeight);
         // Set the image options.
         BitmapFactory.Options options = new BitmapFactory.Options();
         options.inDither = true;
@@ -69,7 +97,7 @@ public class SelectionView extends View {
         // Load the image and define the canvas on top of it.
         if (fileUri != null) {
             try {
-                ParcelFileDescriptor pfd = context.getContentResolver().openFileDescriptor(fileUri, "r");
+                ParcelFileDescriptor pfd = getContext().getContentResolver().openFileDescriptor(fileUri, "r");
                 FileDescriptor fd = pfd.getFileDescriptor();
 
                 // First decode with inJustDecodeBounds=true to check dimensions
@@ -78,11 +106,11 @@ public class SelectionView extends View {
                 options.inJustDecodeBounds = false;
 
                 // Calculate inSampleSize
-                options.inSampleSize = calculateInSampleSize(options, getWidth(), getHeight());
+                options.inSampleSize = calculateInSampleSize(options, w, h);
                 Log.d("HueColor", "Sample size: " + options.inSampleSize);
 
                 // Decode bitmap with inSampleSize set
-                pfd = context.getContentResolver().openFileDescriptor(fileUri, "r");
+                pfd = getContext().getContentResolver().openFileDescriptor(fileUri, "r");
                 fd = pfd.getFileDescriptor();
                 bitmap = BitmapFactory.decodeFileDescriptor(fd, null, options);
                 Log.d("HueColor", "Bitmap info: " + bitmap.getHeight() + "/" + bitmap.getWidth() + " " + bitmap.getByteCount() + " " + bitmap.getDensity());
@@ -104,24 +132,6 @@ public class SelectionView extends View {
 
         // Define the canvas and line path.
         canvas = new Canvas(bitmap.copy(Bitmap.Config.ARGB_8888, true));
-        path = new Path();
-
-        // Define the paint for the selection line.
-        paint = new Paint();
-        paint.setAntiAlias(true);
-        paint.setDither(true);
-        paint.setColor(Color.RED);
-        paint.setStyle(Paint.Style.STROKE);
-        paint.setStrokeJoin(Paint.Join.ROUND);
-        paint.setStrokeCap(Paint.Cap.ROUND);
-        paint.setStrokeWidth(8);
-
-        // Convert the image to grayscale.
-        ColorMatrix matrix = new ColorMatrix();
-        matrix.setSaturation(0);
-        ColorMatrixColorFilter filter = new ColorMatrixColorFilter(matrix);
-        grayscaleFilter = new Paint(Paint.DITHER_FLAG);
-        grayscaleFilter.setColorFilter(filter);
 
         // Start edge detection as a background process.
         startEdgeDetection();
@@ -149,15 +159,12 @@ public class SelectionView extends View {
     }
 
     @Override
-    protected void onSizeChanged(int w, int h, int oldWidth, int oldHeight) {
-        super.onSizeChanged(w, h, oldWidth, oldHeight);
-    }
-
-    @Override
     protected void onDraw(Canvas canvas) {
         // Update the previous path and draw the new path.
-        canvas.drawBitmap(bitmap, 0, 0, grayscaleFilter);
-        canvas.drawPath(path, paint);
+        if (bitmap != null) {
+            canvas.drawBitmap(bitmap, 0, 0, grayscaleFilter);
+            canvas.drawPath(path, paint);
+        }
     }
 
     private void touchStart(float x, float y) {
