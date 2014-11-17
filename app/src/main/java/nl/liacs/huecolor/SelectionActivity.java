@@ -1,6 +1,8 @@
 package nl.liacs.huecolor;
 
 import android.app.Activity;
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 
 /**
@@ -11,8 +13,15 @@ public class SelectionActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        Intent intent = this.getIntent();
+        String action = intent.getAction();
+        Uri fileUri = null;
+        if (action.equals("nl.liacs.huecolor.select")) {
+            fileUri = intent.getData();
+        }
+
         // Use a custom view for the image.
-        SelectionView initialView = new SelectionView(this);
+        SelectionView initialView = new SelectionView(this, fileUri);
         setContentView(initialView);
     }
 }

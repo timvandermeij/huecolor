@@ -18,7 +18,8 @@ import java.util.Date;
 public class MainActivity extends Activity {
     private static final int CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE = 100;
     private static final int MEDIA_TYPE_IMAGE = 1;
-    private Uri fileUri;
+    private static final int REQUEST_IMAGE_GET = 101;
+    private Uri fileUri = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,20 +56,11 @@ public class MainActivity extends Activity {
         browse.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (!checkExternalStorage()) {
-                    return;
+                Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+                intent.setType("image/*");
+                if (intent.resolveActivity(getPackageManager()) != null) {
+                    startActivityForResult(intent, REQUEST_IMAGE_GET);
                 }
-
-                File mPath = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).toString());
-                FileDialog fileDialog = new FileDialog(MainActivity.this, mPath);
-                fileDialog.setFileEndsWith(".jpg");
-                fileDialog.addFileListener(new FileDialog.FileSelectedListener() {
-                    public void fileSelected(File file) {
-                        Log.d("HueColor", "Selected file " + file.toString());
-                        fileUri = Uri.fromFile(file);
-                    }
-                });
-                fileDialog.showDialog();
             }
         });
 
@@ -77,7 +69,7 @@ public class MainActivity extends Activity {
         selection.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(MainActivity.this, SelectionActivity.class);
+                Intent intent = new Intent("nl.liacs.huecolor.select", fileUri, MainActivity.this, SelectionActivity.class);
                 startActivity(intent);
             }
         });
@@ -128,6 +120,9 @@ public class MainActivity extends Activity {
                 // Image capture failed
                 Toast.makeText(this, "Image capture failed", Toast.LENGTH_LONG).show();
             }
+        }
+        else if (requestCode == REQUEST_IMAGE_GET && resultCode == RESULT_OK) {
+            fileUri = data.getData();
         }
     }
 
