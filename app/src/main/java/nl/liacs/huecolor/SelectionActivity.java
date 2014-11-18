@@ -39,7 +39,7 @@ public class SelectionActivity extends Activity {
             @Override
             public void onClick(View view) {
                 Toast.makeText(getApplicationContext(), "It would be nice if a filter was applied now.",
-                               Toast.LENGTH_LONG).show();
+                        Toast.LENGTH_LONG).show();
             }
         });
     }

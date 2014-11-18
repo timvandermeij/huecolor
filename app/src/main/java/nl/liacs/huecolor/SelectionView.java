@@ -1,6 +1,7 @@
 package nl.liacs.huecolor;
 
 import android.content.Context;
+import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.BitmapShader;
@@ -16,6 +17,7 @@ import android.net.Uri;
 import android.os.Handler;
 import android.os.ParcelFileDescriptor;
 import android.util.DisplayMetrics;
+import android.util.TypedValue;
 import android.view.MotionEvent;
 import android.view.View;
 
@@ -32,6 +34,7 @@ public class SelectionView extends View {
     // Canvas
     private Canvas canvas = null;
     private Bitmap bitmap = null;
+    private Bitmap originalBitmap = null; // Only for orientation changes. Do not use otherwise!
     private Paint grayscaleFilter;
 
     // Drawing
@@ -102,8 +105,17 @@ public class SelectionView extends View {
     }
 
     @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+
+        bitmap = scaleToView(originalBitmap);
+        invalidate();
+    }
+
+    @Override
     protected void onSizeChanged(int w, int h, int oldWidth, int oldHeight) {
         super.onSizeChanged(w, h, oldWidth, oldHeight);
+
         // Set the image options.
         BitmapFactory.Options options = new BitmapFactory.Options();
         options.inDither = true;
@@ -116,27 +128,17 @@ public class SelectionView extends View {
             try {
                 ParcelFileDescriptor pfd = getContext().getContentResolver().openFileDescriptor(fileUri, "r");
                 FileDescriptor fd = pfd.getFileDescriptor();
+                originalBitmap = BitmapFactory.decodeFileDescriptor(fd, null, options);
 
-                // First decode with inJustDecodeBounds=true to check dimensions
-                options.inJustDecodeBounds = true;
-                BitmapFactory.decodeFileDescriptor(fd, null, options);
-                options.inJustDecodeBounds = false;
-
-                // Calculate inSampleSize
-                options.inSampleSize = calculateInSampleSize(options, w, h);
-
-                // Decode bitmap with inSampleSize set
-                pfd = getContext().getContentResolver().openFileDescriptor(fileUri, "r");
-                fd = pfd.getFileDescriptor();
-                bitmap = BitmapFactory.decodeFileDescriptor(fd, null, options);
-            }
-            catch (Exception e) {
+                // Scale the bitmap to prevent memory issues and to make it fit on the screen.
+                bitmap = scaleToView(originalBitmap);
+            } catch (Exception e) {
                 bitmap = null;
                 options.inSampleSize = 1;
             }
         }
         if (bitmap == null) {
-            bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.example2, options);
+            bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.example, options);
         }
 
         // Scale the image to the device by specifying its density.
@@ -155,25 +157,59 @@ public class SelectionView extends View {
         startEdgeDetection();
     }
 
-    public static int calculateInSampleSize(BitmapFactory.Options options, int reqWidth, int reqHeight) {
-        // Raw height and width of image
-        final int height = options.outHeight;
-        final int width = options.outWidth;
-        int inSampleSize = 1;
+    private Bitmap scaleToView(Bitmap bitmap) {
+        // Scale the loaded image to fit each screen.
+        // No need to check for orientation: the metrics will be
+        // adjusted automatically in that case.
+        DisplayMetrics metrics = getResources().getDisplayMetrics();
+        int originalWidth = bitmap.getWidth();
+        int originalHeight = bitmap.getHeight();
+        int viewWidth = metrics.widthPixels;
+        int viewHeight = metrics.heightPixels;
+        int newWidth = -1;
+        int newHeight = -1;
+        float scaleFactor = -1.0F;
 
-        if (height > reqHeight || width > reqWidth) {
+        // The metrics are of the entire screen. We want to remove the size of the
+        // action bar and the status bar so we get the actual height of the view.
 
-            final int halfHeight = height / 2;
-            final int halfWidth = width / 2;
+        // Remove action bar height
+        TypedValue tv = new TypedValue();
+        getContext().getTheme().resolveAttribute(android.R.attr.actionBarSize, tv, true);
+        viewHeight -= getResources().getDimensionPixelSize(tv.resourceId);
 
-            // Calculate the largest inSampleSize value that is a power of 2 and keeps both
-            // height and width larger than the requested height and width.
-            while ((halfHeight / inSampleSize) > reqHeight && (halfWidth / inSampleSize) > reqWidth) {
-                inSampleSize *= 2;
-            }
+        // Remove status bar height
+        final int LOW_DPI_STATUS_BAR_HEIGHT = 19;
+        final int MEDIUM_DPI_STATUS_BAR_HEIGHT = 25;
+        final int HIGH_DPI_STATUS_BAR_HEIGHT = 38;
+
+        switch (metrics.densityDpi) {
+            case DisplayMetrics.DENSITY_HIGH:
+                viewHeight -= HIGH_DPI_STATUS_BAR_HEIGHT;
+                break;
+            case DisplayMetrics.DENSITY_MEDIUM:
+                viewHeight -= MEDIUM_DPI_STATUS_BAR_HEIGHT;
+                break;
+            case DisplayMetrics.DENSITY_LOW:
+                viewHeight -= LOW_DPI_STATUS_BAR_HEIGHT;
+                break;
+            default:
+                viewHeight -= HIGH_DPI_STATUS_BAR_HEIGHT;
         }
 
-        return inSampleSize;
+        if(originalHeight > originalWidth) {
+            newHeight = viewHeight;
+            scaleFactor = (float) originalWidth / (float) originalHeight;
+            newWidth = (int) (newHeight * scaleFactor);
+        } else if(originalWidth > originalHeight) {
+            newWidth = viewWidth;
+            scaleFactor = (float) originalHeight / (float)originalWidth;
+            newHeight = (int) (newWidth * scaleFactor);
+        } else if(originalHeight == originalWidth) {
+            newHeight = (viewHeight > viewWidth ? viewWidth : viewHeight);
+            newWidth = (viewHeight > viewWidth ? viewWidth : viewHeight);
+        }
+        return Bitmap.createScaledBitmap(bitmap, newWidth, newHeight, false);
     }
 
     @Override
@@ -380,8 +416,7 @@ public class SelectionView extends View {
             // Finish drawing the line.
             path.lineTo(startX, startY);
             adjustDone = true;
-        }
-        catch (ConcurrentModificationException e) {
+        } catch (ConcurrentModificationException e) {
             // Ignore the exception and let the concurrent access handle everything.
         }
     }
