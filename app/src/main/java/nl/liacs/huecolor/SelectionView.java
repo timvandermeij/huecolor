@@ -84,9 +84,6 @@ public class SelectionView extends View {
         paint.setStrokeCap(Paint.Cap.ROUND);
         paint.setStrokeWidth(8);
 
-        //Initialize the BitmapShader with the Bitmap object and set the texture tile mode
-        fillShader = new BitmapShader(bitmap, Shader.TileMode.REPEAT, Shader.TileMode.REPEAT);
-
         // Define the paint for the fill.
         fillPaint = new Paint();
         fillPaint.setAntiAlias(true);
@@ -97,8 +94,6 @@ public class SelectionView extends View {
         fillPaint.setStyle(Paint.Style.FILL);
         fillPaint.setStrokeJoin(Paint.Join.ROUND);
         fillPaint.setStrokeCap(Paint.Cap.ROUND);
-        //Assign the shader to this paint
-        fillPaint.setShader(fillShader);
 
         // Convert the image to grayscale.
         ColorMatrix matrix = new ColorMatrix();
@@ -149,6 +144,11 @@ public class SelectionView extends View {
         // Scale the image to the device by specifying its density.
         DisplayMetrics metrics = getResources().getDisplayMetrics();
         bitmap.setDensity((int)(metrics.density * 160f));
+
+        //Initialize the BitmapShader with the Bitmap object and set the texture tile mode
+        fillShader = new BitmapShader(bitmap, Shader.TileMode.REPEAT, Shader.TileMode.REPEAT);
+        //Assign the shader to this paint
+        fillPaint.setShader(fillShader);
 
         // Define the canvas and line path.
         canvas = new Canvas(bitmap.copy(Bitmap.Config.ARGB_8888, true));
