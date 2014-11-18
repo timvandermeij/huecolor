@@ -107,22 +107,18 @@ public class SelectionView extends View {
 
                 // Calculate inSampleSize
                 options.inSampleSize = calculateInSampleSize(options, w, h);
-                Log.d("HueColor", "Sample size: " + options.inSampleSize);
 
                 // Decode bitmap with inSampleSize set
                 pfd = getContext().getContentResolver().openFileDescriptor(fileUri, "r");
                 fd = pfd.getFileDescriptor();
                 bitmap = BitmapFactory.decodeFileDescriptor(fd, null, options);
-                Log.d("HueColor", "Bitmap info: " + bitmap.getHeight() + "/" + bitmap.getWidth() + " " + bitmap.getByteCount() + " " + bitmap.getDensity());
             }
             catch (Exception e) {
-                Log.d("HueColor", "Received an exception: " + e.toString() + Arrays.toString(e.getStackTrace()));
                 bitmap = null;
                 options.inSampleSize = 1;
             }
         }
         if (bitmap == null) {
-            Log.d("HueColor", "Fall back on resource image");
             bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.example2, options);
         }
 
