@@ -4,4 +4,5 @@
     <string name="take_camera_photo">Take photo with camera</string>
     <string name="browse_photo">Browse for photo</string>
     <string name="select_object">Select object</string>
+    <string name="selection_bar_text">Oh, hue</string>
 </resources>
