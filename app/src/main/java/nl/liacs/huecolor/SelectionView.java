@@ -182,11 +182,11 @@ public class SelectionView extends View {
     protected void onDraw(Canvas canvas) {
         // Update the previous path and draw the new path.
         if (bitmap != null) {
-        	canvas.drawBitmap(bitmap, 0, 0, grayscaleFilter);
-        	canvas.drawPath(path, paint);
-        	if (adjustDone) {
-            	canvas.drawPath(path, fillPaint);
-			}
+            canvas.drawBitmap(bitmap, 0, 0, grayscaleFilter);
+            canvas.drawPath(path, paint);
+            if (adjustDone) {
+                canvas.drawPath(path, fillPaint);
+            }
         }
     }
 
