@@ -6,7 +6,6 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
@@ -31,19 +30,18 @@ public class MainActivity extends Activity {
         camera.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (!checkExternalStorage()) {
-                    return;
-                }
-
                 // Create Intent to take a picture and return control to the calling application
                 Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
 
                 try {
                     fileUri = getOutputMediaFileUri(MEDIA_TYPE_IMAGE); // Create a file to save the image
-                } catch (Exception e) {
+                } catch (Exception ignored) {
+                }
+                if (fileUri == null) {
                     Toast.makeText(MainActivity.this, "Could not create an image file for photo", Toast.LENGTH_LONG).show();
                     return;
                 }
+
                 intent.putExtra(MediaStore.EXTRA_OUTPUT, fileUri); // Set the image file name
 
                 // Start the image capture intent
@@ -78,22 +76,22 @@ public class MainActivity extends Activity {
     /**
      * Create a file URI for saving an image or video
      */
-    private static Uri getOutputMediaFileUri(int type) {
+    private Uri getOutputMediaFileUri(int type) {
         return Uri.fromFile(getOutputMediaFile(type));
     }
 
     /**
      * Create a file for saving an image or video
      */
-    private static File getOutputMediaFile(int type) {
+    private File getOutputMediaFile(int type) {
         File mediaStorageDir = new File(Environment.getExternalStoragePublicDirectory(
                                         Environment.DIRECTORY_PICTURES), "HueColor");
 
         // Create the storage directory if it does not exist
         if (!mediaStorageDir.exists()) {
             if (!mediaStorageDir.mkdirs()) {
-                Log.d("HueColor", "Failed to create directory");
-                return null;
+                // Use an internal directory
+                mediaStorageDir = getFilesDir();
             }
         }
 
@@ -123,22 +121,6 @@ public class MainActivity extends Activity {
         }
         else if (requestCode == REQUEST_IMAGE_GET && resultCode == RESULT_OK) {
             fileUri = data.getData();
-        }
-    }
-
-    /**
-     * Checks the external storage's state.
-     */
-    private boolean checkExternalStorage() {
-        String state = Environment.getExternalStorageState();
-        if (state.equals(Environment.MEDIA_MOUNTED)) {
-            return true;
-        } else if (state.equals(Environment.MEDIA_MOUNTED_READ_ONLY)) {
-            Toast.makeText(MainActivity.this, "External storage is read-only", Toast.LENGTH_LONG).show();
-            return false;
-        } else {
-            Toast.makeText(MainActivity.this, "External storage is not available", Toast.LENGTH_LONG).show();
-            return false;
         }
     }
 }
