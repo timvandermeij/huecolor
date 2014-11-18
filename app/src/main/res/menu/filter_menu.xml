@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/filterOne"
+        android:title="Filter One"/>
+
+    <item
+        android:id="@+id/filterTwo"
+        android:title="Filter Two"/>
+
+    <item
+        android:id="@+id/filterThree"
+        android:title="Filter Three"/>
+
+</menu>
