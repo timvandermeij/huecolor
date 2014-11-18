@@ -16,13 +16,11 @@ import android.net.Uri;
 import android.os.Handler;
 import android.os.ParcelFileDescriptor;
 import android.util.DisplayMetrics;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 
 import java.io.FileDescriptor;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.ConcurrentModificationException;
 
 /**
@@ -145,9 +143,9 @@ public class SelectionView extends View {
         DisplayMetrics metrics = getResources().getDisplayMetrics();
         bitmap.setDensity((int)(metrics.density * 160f));
 
-        //Initialize the BitmapShader with the Bitmap object and set the texture tile mode
+        // Initialize the BitmapShader with the Bitmap object and set the texture tile mode
         fillShader = new BitmapShader(bitmap, Shader.TileMode.REPEAT, Shader.TileMode.REPEAT);
-        //Assign the shader to this paint
+        // Assign the shader to this paint
         fillPaint.setShader(fillShader);
 
         // Define the canvas and line path.
