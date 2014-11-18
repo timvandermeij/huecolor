@@ -3,6 +3,7 @@ package nl.liacs.huecolor;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.BitmapShader;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.ColorMatrix;
@@ -10,6 +11,7 @@ import android.graphics.ColorMatrixColorFilter;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.PointF;
+import android.graphics.Shader;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.ParcelFileDescriptor;
@@ -36,6 +38,8 @@ public class SelectionView extends View {
 
     // Drawing
     private Paint paint;
+    private Paint fillPaint;
+    private BitmapShader fillShader;
     private Path path;
     private float touchStartX, touchStartY; // Used for closing an incomplete path
     private float startX, startY; // Used for calculating new point of line
@@ -56,6 +60,8 @@ public class SelectionView extends View {
     private Handler handler = new Handler();
     private Thread adjustPathThread = null;
 
+    private boolean adjustDone = false;
+
     public SelectionView(Context context) {
         this(context, null);
     }
@@ -70,11 +76,29 @@ public class SelectionView extends View {
         paint = new Paint();
         paint.setAntiAlias(true);
         paint.setDither(true);
+        // Set the line color to red.
         paint.setColor(Color.RED);
+        // Also fill the area drawn.
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeJoin(Paint.Join.ROUND);
         paint.setStrokeCap(Paint.Cap.ROUND);
         paint.setStrokeWidth(8);
+
+        //Initialize the BitmapShader with the Bitmap object and set the texture tile mode
+        fillShader = new BitmapShader(bitmap, Shader.TileMode.REPEAT, Shader.TileMode.REPEAT);
+
+        // Define the paint for the fill.
+        fillPaint = new Paint();
+        fillPaint.setAntiAlias(true);
+        fillPaint.setDither(true);
+        // Set the fill color to transparent.
+        fillPaint.setARGB(255, 0, 0, 0);
+        // Also fill the area drawn.
+        fillPaint.setStyle(Paint.Style.FILL);
+        fillPaint.setStrokeJoin(Paint.Join.ROUND);
+        fillPaint.setStrokeCap(Paint.Cap.ROUND);
+        //Assign the shader to this paint
+        fillPaint.setShader(fillShader);
 
         // Convert the image to grayscale.
         ColorMatrix matrix = new ColorMatrix();
@@ -158,8 +182,11 @@ public class SelectionView extends View {
     protected void onDraw(Canvas canvas) {
         // Update the previous path and draw the new path.
         if (bitmap != null) {
-            canvas.drawBitmap(bitmap, 0, 0, grayscaleFilter);
-            canvas.drawPath(path, paint);
+        	canvas.drawBitmap(bitmap, 0, 0, grayscaleFilter);
+        	canvas.drawPath(path, paint);
+        	if (adjustDone) {
+            	canvas.drawPath(path, fillPaint);
+			}
         }
     }
 
@@ -170,6 +197,7 @@ public class SelectionView extends View {
             adjustPathThread.interrupt();
             adjustPathThread = null;
         }
+        adjustDone = false;
         path.reset();
         path.moveTo(x, y);
         pointsList.clear();
@@ -353,6 +381,7 @@ public class SelectionView extends View {
 
             // Finish drawing the line.
             path.lineTo(startX, startY);
+            adjustDone = true;
         }
         catch (ConcurrentModificationException e) {
             // Ignore the exception and let the concurrent access handle everything.
