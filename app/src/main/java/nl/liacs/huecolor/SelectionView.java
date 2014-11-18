@@ -3,6 +3,7 @@ package nl.liacs.huecolor;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.BitmapShader;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.ColorMatrix;
@@ -10,6 +11,7 @@ import android.graphics.ColorMatrixColorFilter;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.PointF;
+import android.graphics.Shader;
 import android.os.Handler;
 import android.util.DisplayMetrics;
 import android.view.MotionEvent;
@@ -30,6 +32,7 @@ public class SelectionView extends View {
     // Drawing
     private Paint paint;
     private Paint fillPaint;
+    private BitmapShader fillShader;
     private Path path;
     private float touchStartX, touchStartY; // Used for closing an incomplete path
     private float startX, startY; // Used for calculating new point of line
@@ -85,16 +88,21 @@ public class SelectionView extends View {
         paint.setStrokeCap(Paint.Cap.ROUND);
         paint.setStrokeWidth(8);
 
+        //Initialize the BitmapShader with the Bitmap object and set the texture tile mode
+        fillShader = new BitmapShader(bitmap, Shader.TileMode.REPEAT, Shader.TileMode.REPEAT);
+
         // Define the paint for the fill.
         fillPaint = new Paint();
         fillPaint.setAntiAlias(true);
         fillPaint.setDither(true);
-        // Set the fill color to transparent red.
-        fillPaint.setARGB(128, 255, 0, 0);
+        // Set the fill color to transparent.
+        fillPaint.setARGB(255, 0, 0, 0);
         // Also fill the area drawn.
-        fillPaint.setStyle(Paint.Style.FILL_AND_STROKE);
+        fillPaint.setStyle(Paint.Style.FILL);
         fillPaint.setStrokeJoin(Paint.Join.ROUND);
         fillPaint.setStrokeCap(Paint.Cap.ROUND);
+        //Assign the shader to this paint
+        fillPaint.setShader(fillShader);
 
         // Convert the image to grayscale.
         ColorMatrix matrix = new ColorMatrix();
