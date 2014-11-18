@@ -4,6 +4,7 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.ColorMatrix;
 import android.graphics.ColorMatrixColorFilter;
 import android.graphics.Paint;
@@ -28,6 +29,7 @@ public class SelectionView extends View {
 
     // Drawing
     private Paint paint;
+    private Paint fillPaint;
     private Path path;
     private float touchStartX, touchStartY; // Used for closing an incomplete path
     private float startX, startY; // Used for calculating new point of line
@@ -47,6 +49,8 @@ public class SelectionView extends View {
 
     private Handler handler = new Handler();
     private Thread adjustPathThread = null;
+
+    private boolean adjustDone = false;
 
     public SelectionView(Context context) {
         super(context);
@@ -73,13 +77,24 @@ public class SelectionView extends View {
         paint = new Paint();
         paint.setAntiAlias(true);
         paint.setDither(true);
-        // Set the color to transparent red.
-        paint.setARGB(128, 255, 0, 0);
+        // Set the line color to red.
+        paint.setColor(Color.RED);
         // Also fill the area drawn.
-        paint.setStyle(Paint.Style.FILL_AND_STROKE);
+        paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeJoin(Paint.Join.ROUND);
         paint.setStrokeCap(Paint.Cap.ROUND);
         paint.setStrokeWidth(8);
+
+        // Define the paint for the fill.
+        fillPaint = new Paint();
+        fillPaint.setAntiAlias(true);
+        fillPaint.setDither(true);
+        // Set the fill color to transparent red.
+        fillPaint.setARGB(128, 255, 0, 0);
+        // Also fill the area drawn.
+        fillPaint.setStyle(Paint.Style.FILL_AND_STROKE);
+        fillPaint.setStrokeJoin(Paint.Join.ROUND);
+        fillPaint.setStrokeCap(Paint.Cap.ROUND);
 
         // Convert the image to grayscale.
         ColorMatrix matrix = new ColorMatrix();
@@ -102,6 +117,9 @@ public class SelectionView extends View {
         // Update the previous path and draw the new path.
         canvas.drawBitmap(bitmap, 0, 0, grayscaleFilter);
         canvas.drawPath(path, paint);
+        if (adjustDone) {
+            canvas.drawPath(path, fillPaint);
+        }
     }
 
     private void touchStart(float x, float y) {
@@ -111,6 +129,7 @@ public class SelectionView extends View {
             adjustPathThread.interrupt();
             adjustPathThread = null;
         }
+        adjustDone = false;
         path.reset();
         path.moveTo(x, y);
         pointsList.clear();
@@ -294,6 +313,7 @@ public class SelectionView extends View {
 
             // Finish drawing the line.
             path.lineTo(startX, startY);
+            adjustDone = true;
         }
         catch (ConcurrentModificationException e) {
             // Ignore the exception and let the concurrent access handle everything.
