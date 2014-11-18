@@ -12,21 +12,28 @@ import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.PointF;
 import android.graphics.Shader;
+import android.net.Uri;
 import android.os.Handler;
+import android.os.ParcelFileDescriptor;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 
+import java.io.FileDescriptor;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.ConcurrentModificationException;
 
 /**
  * Custom view for showing a grayscale image and drawing a path on the image.
  */
 public class SelectionView extends View {
+    private Uri fileUri;
+
     // Canvas
-    private Canvas canvas;
-    private Bitmap bitmap;
+    private Canvas canvas = null;
+    private Bitmap bitmap = null;
     private Paint grayscaleFilter;
 
     // Drawing
@@ -43,7 +50,7 @@ public class SelectionView extends View {
     private ArrayList<PointF> edgePointsList = new ArrayList<PointF>();
     private final static int KERNEL_WIDTH = 3;
     private final static int KERNEL_HEIGHT = 3;
-    private final static int EDGE_THRESHOLD = 8;
+    private final static int EDGE_THRESHOLD = 100;
     private final static int[][] kernel = {
         {0, -1, 0},
         {-1, 4, -1},
@@ -56,24 +63,13 @@ public class SelectionView extends View {
     private boolean adjustDone = false;
 
     public SelectionView(Context context) {
+        this(context, null);
+    }
+
+    public SelectionView(Context context, Uri fileUri) {
         super(context);
+        this.fileUri = fileUri;
 
-        // Set the image options.
-        BitmapFactory.Options options = new BitmapFactory.Options();
-        options.inDither = true;
-        options.inScaled = false;
-        options.inPreferredConfig = Bitmap.Config.ARGB_8888;
-        options.inPurgeable = true;
-
-        // Load the image and define the canvas on top of it.
-        bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.example2, options);
-
-        // Scale the image to the device by specifying its density.
-        DisplayMetrics metrics = getResources().getDisplayMetrics();
-        bitmap.setDensity((int)(metrics.density * 160f));
-
-        // Define the canvas and line path.
-        canvas = new Canvas(bitmap.copy(Bitmap.Config.ARGB_8888, true));
         path = new Path();
 
         // Define the paint for the selection line.
@@ -110,23 +106,87 @@ public class SelectionView extends View {
         ColorMatrixColorFilter filter = new ColorMatrixColorFilter(matrix);
         grayscaleFilter = new Paint(Paint.DITHER_FLAG);
         grayscaleFilter.setColorFilter(filter);
-
-        // Start edge detection as a background process.
-        startEdgeDetection();
     }
 
     @Override
     protected void onSizeChanged(int w, int h, int oldWidth, int oldHeight) {
         super.onSizeChanged(w, h, oldWidth, oldHeight);
+        // Set the image options.
+        BitmapFactory.Options options = new BitmapFactory.Options();
+        options.inDither = true;
+        options.inScaled = false;
+        options.inPreferredConfig = Bitmap.Config.ARGB_8888;
+        options.inPurgeable = true;
+
+        // Load the image and define the canvas on top of it.
+        if (fileUri != null) {
+            try {
+                ParcelFileDescriptor pfd = getContext().getContentResolver().openFileDescriptor(fileUri, "r");
+                FileDescriptor fd = pfd.getFileDescriptor();
+
+                // First decode with inJustDecodeBounds=true to check dimensions
+                options.inJustDecodeBounds = true;
+                BitmapFactory.decodeFileDescriptor(fd, null, options);
+                options.inJustDecodeBounds = false;
+
+                // Calculate inSampleSize
+                options.inSampleSize = calculateInSampleSize(options, w, h);
+
+                // Decode bitmap with inSampleSize set
+                pfd = getContext().getContentResolver().openFileDescriptor(fileUri, "r");
+                fd = pfd.getFileDescriptor();
+                bitmap = BitmapFactory.decodeFileDescriptor(fd, null, options);
+            }
+            catch (Exception e) {
+                bitmap = null;
+                options.inSampleSize = 1;
+            }
+        }
+        if (bitmap == null) {
+            bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.example2, options);
+        }
+
+        // Scale the image to the device by specifying its density.
+        DisplayMetrics metrics = getResources().getDisplayMetrics();
+        bitmap.setDensity((int)(metrics.density * 160f));
+
+        // Define the canvas and line path.
+        canvas = new Canvas(bitmap.copy(Bitmap.Config.ARGB_8888, true));
+
+        // Start edge detection as a background process.
+        startEdgeDetection();
+    }
+
+    public static int calculateInSampleSize(BitmapFactory.Options options, int reqWidth, int reqHeight) {
+        // Raw height and width of image
+        final int height = options.outHeight;
+        final int width = options.outWidth;
+        int inSampleSize = 1;
+
+        if (height > reqHeight || width > reqWidth) {
+
+            final int halfHeight = height / 2;
+            final int halfWidth = width / 2;
+
+            // Calculate the largest inSampleSize value that is a power of 2 and keeps both
+            // height and width larger than the requested height and width.
+            while ((halfHeight / inSampleSize) > reqHeight && (halfWidth / inSampleSize) > reqWidth) {
+                inSampleSize *= 2;
+            }
+        }
+
+        return inSampleSize;
     }
 
     @Override
     protected void onDraw(Canvas canvas) {
         // Update the previous path and draw the new path.
-        canvas.drawBitmap(bitmap, 0, 0, grayscaleFilter);
-        canvas.drawPath(path, paint);
-        if (adjustDone) {
-            canvas.drawPath(path, fillPaint);
+        if (bitmap != null) {
+            canvas.drawBitmap(bitmap, 0, 0, grayscaleFilter);
+            canvas.drawPath(path, paint);
+            if (adjustDone) {
+                canvas.drawPath(path, fillPaint);
+            }
         }
     }
 

@@ -24,8 +24,13 @@
         </activity>
         <activity
             android:name="nl.liacs.huecolor.SelectionActivity"
-            android:label="@string/select_object"
-        />
+            android:label="@string/select_object" >
+            <intent-filter>
+                <action android:name="nl.liacs.huecolor.select" />
+
+                <category android:name="android.intent.category.OPENABLE" />
+            </intent-filter>
+        </activity>
     </application>
 
 </manifest>
