@@ -1,14 +1,13 @@
 package nl.liacs.huecolor;
 
-import android.app.ActionBar;
 import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.MenuItem;
-import android.view.View;
 import android.widget.Button;
-import android.widget.PopupMenu;
 import android.widget.Toast;
 
 /**
@@ -30,27 +29,30 @@ public class SelectionActivity extends Activity {
         // Use a custom view for the image.
         SelectionView initialView = new SelectionView(this, fileUri);
         setContentView(initialView);
+    }
 
-        ActionBar actionBar = getActionBar();
-        actionBar.setDisplayOptions(ActionBar.DISPLAY_SHOW_CUSTOM);
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.filter_menu, menu);
+        return true;
+    }
 
-        View view = View.inflate(getApplicationContext(), R.layout.selection_bar, null);
-        actionBar.setCustomView(view);
-
-        filterButton = (Button) view.findViewById(R.id.filterButton);
-        filterButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                PopupMenu popUp = new PopupMenu(SelectionActivity.this, filterButton);
-                popUp.getMenuInflater().inflate(R.menu.filter_menu, popUp.getMenu());
-                popUp.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
-                    public boolean onMenuItemClick(MenuItem item) {
-                        Toast.makeText(SelectionActivity.this,"You Clicked : " + item.getTitle(), Toast.LENGTH_SHORT).show();
-                        return true;
-                    }
-                });
-                popUp.show();
-            }
-        });
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.filterOne:
+                Toast.makeText(SelectionActivity.this, R.string.filter_one, Toast.LENGTH_LONG).show();
+                break;
+            case R.id.filterTwo:
+                Toast.makeText(SelectionActivity.this, R.string.filter_two, Toast.LENGTH_LONG).show();
+                break;
+            case R.id.filterThree:
+                Toast.makeText(SelectionActivity.this, R.string.filter_three, Toast.LENGTH_LONG).show();
+                break;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+        return true;
     }
 }
