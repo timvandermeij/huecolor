@@ -99,7 +99,6 @@ public class SelectionView extends View {
     private Canvas canvas = null;
     private int canvasLeft = 0, canvasTop = 0;
     private Bitmap bitmap = null;
-    private Bitmap originalBitmap = null; // Only for orientation changes. Do not use otherwise!
     private Paint grayscaleFilter;
 
     // Drawing
@@ -143,28 +142,6 @@ public class SelectionView extends View {
         super(context);
         this.fileUri = fileUri;
 
-        // Set the image options.
-        BitmapFactory.Options options = new BitmapFactory.Options();
-        options.inDither = true;
-        options.inScaled = false;
-        options.inPreferredConfig = Bitmap.Config.ARGB_8888;
-        options.inPurgeable = true;
-
-        // Load the image.
-        if (fileUri != null) {
-            try {
-                ParcelFileDescriptor pfd = getContext().getContentResolver().openFileDescriptor(fileUri, "r");
-                FileDescriptor fd = pfd.getFileDescriptor();
-                originalBitmap = BitmapFactory.decodeFileDescriptor(fd, null, options);
-
-            } catch (Exception e) {
-                originalBitmap = null;
-            }
-        }
-        if (originalBitmap == null) {
-            originalBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.example, options);
-        }
-
         path = new Path();
 
         // Define the paint for the selection line.
@@ -199,19 +176,33 @@ public class SelectionView extends View {
     }
 
     @Override
-    public void onConfigurationChanged(Configuration newConfig) {
-        super.onConfigurationChanged(newConfig);
-
-        bitmap = scaleToView(originalBitmap);
-        invalidate();
-    }
-
-    @Override
     protected void onSizeChanged(int w, int h, int oldWidth, int oldHeight) {
         super.onSizeChanged(w, h, oldWidth, oldHeight);
 
+        // Set the image options.
+        BitmapFactory.Options options = new BitmapFactory.Options();
+        options.inDither = true;
+        options.inScaled = false;
+        options.inPreferredConfig = Bitmap.Config.ARGB_8888;
+        options.inPurgeable = true;
+
+        // Load the image.
+        if (fileUri != null) {
+            try {
+                ParcelFileDescriptor pfd = getContext().getContentResolver().openFileDescriptor(fileUri, "r");
+                FileDescriptor fd = pfd.getFileDescriptor();
+                bitmap = BitmapFactory.decodeFileDescriptor(fd, null, options);
+
+            } catch (Throwable e) {
+                bitmap = null;
+            }
+        }
+        if (bitmap == null) {
+            bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.example, options);
+        }
+
         // Scale the bitmap to prevent memory issues during edge detection and to make it fit on the screen.
-        bitmap = scaleToView(originalBitmap);
+        bitmap = scaleToView(bitmap);
 
         // Scale the image to the device by specifying its density.
         DisplayMetrics metrics = getResources().getDisplayMetrics();
