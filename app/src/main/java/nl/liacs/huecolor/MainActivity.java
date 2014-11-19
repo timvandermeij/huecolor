@@ -26,22 +26,14 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        /*// Get the button for selecting an object in an image
-        Button selection = (Button)findViewById(R.id.select_object);
-        selection.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent("nl.liacs.huecolor.select", fileUri, MainActivity.this, SelectionActivity.class);
-                startActivity(intent);
-            }
-        });*/
-
         final String[] content = {
             getString(R.string.take_camera_photo),
-            getString(R.string.browse_photo)
+            getString(R.string.browse_photo),
+            getString(R.string.select_object)
         } ;
         final Integer[] icons = {
             R.drawable.ic_camera,
+            R.drawable.ic_browse_photo,
             R.drawable.ic_browse_photo
         };
         IconListView adapter = new IconListView(MainActivity.this, content, icons);
@@ -78,6 +70,14 @@ public class MainActivity extends Activity {
                         if (intent.resolveActivity(getPackageManager()) != null) {
                             startActivityForResult(intent, REQUEST_IMAGE_GET);
                         }
+                        break;
+
+                    case 2: // Object selection
+                        intent = new Intent("nl.liacs.huecolor.select", fileUri, MainActivity.this, SelectionActivity.class);
+                        startActivity(intent);
+                        break;
+
+                    default:
                         break;
                 }
             }

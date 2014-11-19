@@ -24,10 +24,10 @@ public class IconListView extends ArrayAdapter<String> {
     public View getView(int position, View view, ViewGroup parent) {
         LayoutInflater inflater = context.getLayoutInflater();
         View rowView = inflater.inflate(R.layout.list_item, null, true);
-        TextView txtTitle = (TextView) rowView.findViewById(R.id.content);
-        ImageView imageView = (ImageView) rowView.findViewById(R.id.icon);
-        txtTitle.setText(content[position]);
-        imageView.setImageResource(icons[position]);
+        TextView contentView = (TextView) rowView.findViewById(R.id.content);
+        ImageView iconView = (ImageView) rowView.findViewById(R.id.icon);
+        contentView.setText(content[position]);
+        iconView.setImageResource(icons[position]);
         return rowView;
     }
 }
