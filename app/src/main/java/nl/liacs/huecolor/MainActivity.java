@@ -7,7 +7,8 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.view.View;
-import android.widget.Button;
+import android.widget.AdapterView;
+import android.widget.ListView;
 import android.widget.Toast;
 
 import java.io.File;
@@ -25,50 +26,60 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // Get the button for taking a camera photo and add a listener to open the camera
-        Button camera = (Button)findViewById(R.id.camera);
-        camera.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                // Create Intent to take a picture and return control to the calling application
-                Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-
-                try {
-                    fileUri = getOutputMediaFileUri(MEDIA_TYPE_IMAGE); // Create a file to save the image
-                } catch (Exception ignored) {
-                }
-                if (fileUri == null) {
-                    Toast.makeText(MainActivity.this, "Could not create an image file for photo", Toast.LENGTH_LONG).show();
-                    return;
-                }
-
-                intent.putExtra(MediaStore.EXTRA_OUTPUT, fileUri); // Set the image file name
-
-                // Start the image capture intent
-                startActivityForResult(intent, CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE);
-            }
-        });
-
-        // Get the button for browsing for a photo and add a listener to open a file chooser
-        Button browse = (Button)findViewById(R.id.browse);
-        browse.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
-                intent.setType("image/*");
-                if (intent.resolveActivity(getPackageManager()) != null) {
-                    startActivityForResult(intent, REQUEST_IMAGE_GET);
-                }
-            }
-        });
-
-        // Get the button for selecting an object in an image
+        /*// Get the button for selecting an object in an image
         Button selection = (Button)findViewById(R.id.select_object);
         selection.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent("nl.liacs.huecolor.select", fileUri, MainActivity.this, SelectionActivity.class);
                 startActivity(intent);
+            }
+        });*/
+
+        final String[] content = {
+            getString(R.string.take_camera_photo),
+            getString(R.string.browse_photo)
+        } ;
+        final Integer[] icons = {
+            R.drawable.ic_camera,
+            R.drawable.ic_browse_photo
+        };
+        IconListView adapter = new IconListView(MainActivity.this, content, icons);
+        ListView list = (ListView)findViewById(R.id.listView);
+        list.setAdapter(adapter);
+        list.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                Intent intent;
+
+                switch ((int)id) {
+                    case 0: // Take camera photo
+                        // Create Intent to take a picture and return control to the calling application
+                        intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+
+                        try {
+                            fileUri = getOutputMediaFileUri(MEDIA_TYPE_IMAGE); // Create a file to save the image
+                        } catch (Exception ignored) {
+                        }
+                        if (fileUri == null) {
+                            Toast.makeText(MainActivity.this, "Could not create an image file for photo", Toast.LENGTH_LONG).show();
+                            return;
+                        }
+
+                        intent.putExtra(MediaStore.EXTRA_OUTPUT, fileUri); // Set the image file name
+
+                        // Start the image capture intent
+                        startActivityForResult(intent, CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE);
+                        break;
+
+                    case 1: // Browse photo
+                        intent = new Intent(Intent.ACTION_GET_CONTENT);
+                        intent.setType("image/*");
+                        if (intent.resolveActivity(getPackageManager()) != null) {
+                            startActivityForResult(intent, REQUEST_IMAGE_GET);
+                        }
+                        break;
+                }
             }
         });
     }
