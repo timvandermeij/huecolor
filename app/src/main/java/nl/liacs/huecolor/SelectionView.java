@@ -30,6 +30,69 @@ import java.util.ConcurrentModificationException;
  * Custom view for showing a grayscale image and drawing a path on the image.
  */
 public class SelectionView extends View {
+    protected class Distance {
+        public Distance(float x, float y, float d) {
+            this.x = x;
+            this.y = y;
+            this.distance = d;
+        }
+        public float x;
+        public float y;
+        public float distance;
+    }
+
+    protected class PointsList {
+        private ArrayList<PointF> points;
+
+        public PointsList() {
+            points = new ArrayList<PointF>();
+        }
+
+        public PointsList(ArrayList<PointF> list) {
+            points = list;
+        }
+
+        public int size() {
+            return points.size();
+        }
+
+        public void add(PointF point) {
+            points.add(point);
+        }
+
+        public PointF get(int index) {
+            return points.get(index);
+        }
+
+        public boolean has(PointF point) {
+            return points.contains(point);
+        }
+
+        public ArrayList<PointF> getPoints() {
+            return points;
+        }
+
+        public Distance findClosestPoint(PointF point, Distance minDistance) {
+            float distance, x, y;
+
+            // Otherwise find the edge with the least distance from the point.
+            for (PointF edgePoint : points) {
+                // Calculate the distance from the point to this edge point.
+                x = edgePoint.x - point.x;
+                y = edgePoint.y - point.y;
+                distance = (float)Math.sqrt(x * x + y * y);
+
+                // Use this edge point if it is closer than any other edge point.
+                if (distance < minDistance.distance) {
+                    minDistance.distance = distance;
+                    minDistance.x = edgePoint.x;
+                    minDistance.y = edgePoint.y;
+                }
+            }
+            return minDistance;
+        }
+    }
+
     private Uri fileUri;
 
     // Canvas
@@ -47,10 +110,9 @@ public class SelectionView extends View {
     private float touchStartX, touchStartY; // Used for closing an incomplete path
     private float startX, startY; // Used for calculating new point of line
     private static final float TOUCH_TOLERANCE = 4; // Defines how quickly we should draw a line
-    private ArrayList<PointF> pointsList = new ArrayList<PointF>(); // List of points in the path
+    private PointsList pointsList = new PointsList(); // List of points in the path
 
     // Edge detection constants
-    private ArrayList<PointF> edgePointsList = new ArrayList<PointF>();
     private final static int KERNEL_WIDTH = 3;
     private final static int KERNEL_HEIGHT = 3;
     private final static int EDGE_THRESHOLD = 100;
@@ -58,6 +120,14 @@ public class SelectionView extends View {
         {0, -1, 0},
         {-1, 4, -1},
         {0, -1, 0}
+    };
+
+    private final static int BLOCK_SIZE = 10;
+    private PointsList[][] edgePointBuckets = null;
+    private int bucketHeight = 0;
+    private int bucketWidth = 0;
+    private final static int[][] neighbors = {
+            {-1,-1}, {0,-1}, {1, -1}, {1, 0}, {1, 1}, {0, 1}, {-1, 1}, {-1, 0}
     };
 
     private Handler handler = new Handler();
@@ -254,7 +324,7 @@ public class SelectionView extends View {
         adjustDone = false;
         path.reset();
         path.moveTo(x, y);
-        pointsList.clear();
+        pointsList = new PointsList();
         pointsList.add(new PointF(x-canvasLeft,y-canvasTop));
         touchStartX = startX = x;
         touchStartY = startY = y;
@@ -335,6 +405,9 @@ public class SelectionView extends View {
         // Source bitmap pixels
         int[] sourcePixels = new int[sourceWidth * sourceHeight];
         bitmap.getPixels(sourcePixels, 0, sourceWidth, 0, 0, sourceWidth, sourceHeight);
+        bucketWidth = sourceWidth / BLOCK_SIZE;
+        bucketHeight = sourceHeight / BLOCK_SIZE;
+        edgePointBuckets = new PointsList[bucketWidth+1][bucketHeight+1];
 
         for (i = 1; i <= WIDTH_MINUS_2; i++) {
             for (j = 1; j <= HEIGHT_MINUS_2; j++) {
@@ -356,7 +429,12 @@ public class SelectionView extends View {
 
                 // Keep track of the points that are on edges.
                 if (subSumR > EDGE_THRESHOLD || subSumB > EDGE_THRESHOLD || subSumG > EDGE_THRESHOLD) {
-                    edgePointsList.add(new PointF(i,j));
+                    PointF p = new PointF(i,j);
+                    PointsList bucket = edgePointBuckets[i / BLOCK_SIZE][j / BLOCK_SIZE];
+                    if (bucket == null) {
+                        bucket = edgePointBuckets[i / BLOCK_SIZE][j / BLOCK_SIZE] = new PointsList();
+                    }
+                    bucket.add(p);
                 }
             }
         }
@@ -385,41 +463,51 @@ public class SelectionView extends View {
     private void adjustPath() {
         try {
             // We want to move each point in the points list to the nearest edge pixel.
-            float x = 0, y = 0, minX = 0, minY = 0;
-            double distance = Double.POSITIVE_INFINITY, minDistance = Double.POSITIVE_INFINITY;
             int pointListSize = pointsList.size();
 
-            for (PointF point : pointsList) {
+            for (PointF point : pointsList.getPoints()) {
+                Distance minDistance = new Distance(0.0f, 0.0f, Float.POSITIVE_INFINITY);
+
+                int i = (int)(point.x / BLOCK_SIZE);
+                int j = (int)(point.y / BLOCK_SIZE);
+                PointsList bucket = edgePointBuckets[i][j];
                 // Check if the point already happens to be on an edge.
-                if (edgePointsList.contains(point)) {
-                    continue;
+                if (bucket != null) {
+                    if (bucket.has(point)) {
+                        minDistance = new Distance(point.x, point.y, 0.0f);
+                    }
+                    else {
+                        bucket.findClosestPoint(point, minDistance);
+                    }
                 }
-
-                // Otherwise find the edge with the least distance from the point.
-                for (PointF edgePoint : edgePointsList) {
-                    // Calculate the distance from the point to this edge point.
-                    x = edgePoint.x - point.x;
-                    y = edgePoint.y - point.y;
-                    distance = Math.sqrt(x * x + y * y);
-
-                    // Use this edge point if it is closer than any other edge point.
-                    if (distance < minDistance) {
-                        minDistance = distance;
-                        minX = edgePoint.x;
-                        minY = edgePoint.y;
+                if (minDistance.distance > 0.0f) {
+                    // Check the neighbors since they might be closer
+                    for (int[] neighbor : neighbors) {
+                        if (i+neighbor[0] < 0 || i+neighbor[0] > bucketWidth ||
+                            j+neighbor[1] < 0 || j+neighbor[1] > bucketHeight) {
+                            continue;
+                        }
+                        float xD = neighbor[0]*(i-minDistance.x) + (neighbor[0] == -1 ? BLOCK_SIZE : 0.0f);
+                        float yD = neighbor[1]*(j-minDistance.y) + (neighbor[1] == -1 ? BLOCK_SIZE : 0.0f);
+                        if (xD * xD + yD * yD < minDistance.distance * minDistance.distance) {
+                            // Check neighbor since we're close to it
+                            bucket = edgePointBuckets[i+neighbor[0]][j+neighbor[1]];
+                            if (bucket != null) {
+                                bucket.findClosestPoint(point, minDistance);
+                            }
+                        }
                     }
                 }
 
                 // We have found the nearest edge point. Move the point towards that edge point.
-                point.set(minX, minY);
-
-                // Reset the values for the next iteration.
-                minX = minY = 0;
-                minDistance = Double.POSITIVE_INFINITY;
+                if (minDistance.distance < Float.POSITIVE_INFINITY) {
+                    point.set(minDistance.x, minDistance.y);
+                }
             }
 
             // Draw the first point of the new path.
             path.reset();
+            float x, y;
             PointF point = pointsList.get(0);
             startX = x = point.x + canvasLeft;
             startY = y = point.y + canvasTop;
