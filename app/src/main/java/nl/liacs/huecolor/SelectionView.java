@@ -9,6 +9,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.ColorMatrix;
 import android.graphics.ColorMatrixColorFilter;
+import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.PointF;
@@ -33,6 +34,7 @@ public class SelectionView extends View {
 
     // Canvas
     private Canvas canvas = null;
+    private int canvasLeft = 0, canvasTop = 0;
     private Bitmap bitmap = null;
     private Bitmap originalBitmap = null; // Only for orientation changes. Do not use otherwise!
     private Paint grayscaleFilter;
@@ -147,6 +149,9 @@ public class SelectionView extends View {
 
         // Initialize the BitmapShader with the Bitmap object and set the texture tile mode
         fillShader = new BitmapShader(bitmap, Shader.TileMode.REPEAT, Shader.TileMode.REPEAT);
+        Matrix m = new Matrix();
+        m.postTranslate(canvasLeft, canvasTop);
+        fillShader.setLocalMatrix(m);
         // Assign the shader to this paint
         fillPaint.setShader(fillShader);
 
@@ -197,18 +202,33 @@ public class SelectionView extends View {
                 viewHeight -= HIGH_DPI_STATUS_BAR_HEIGHT;
         }
 
-        if(originalHeight > originalWidth) {
+        if (originalHeight > originalWidth) {
+            scaleFactor = (float)originalWidth / (float)originalHeight;
             newHeight = viewHeight;
-            scaleFactor = (float) originalWidth / (float) originalHeight;
             newWidth = (int) (newHeight * scaleFactor);
-        } else if(originalWidth > originalHeight) {
+        } else if (originalWidth > originalHeight) {
+            scaleFactor = (float)originalHeight / (float)originalWidth;
             newWidth = viewWidth;
-            scaleFactor = (float) originalHeight / (float)originalWidth;
             newHeight = (int) (newWidth * scaleFactor);
-        } else if(originalHeight == originalWidth) {
+        } else if (originalHeight == originalWidth) {
             newHeight = (viewHeight > viewWidth ? viewWidth : viewHeight);
             newWidth = (viewHeight > viewWidth ? viewWidth : viewHeight);
         }
+
+        // Make sure the image is not larger than the view width: sometimes the scaling above
+        // makes the image a bit larger than that.
+        if (newHeight > viewHeight) {
+            newWidth *= (float)viewHeight / (float)newHeight;
+            newHeight = viewHeight;
+        }
+        else if (newWidth > viewWidth) {
+            newHeight *= (float)viewWidth / (float)newWidth;
+            newWidth = viewWidth;
+        }
+
+        canvasLeft = (viewWidth - newWidth) / 2;
+        canvasTop = (viewHeight - newHeight) / 2;
+
         return Bitmap.createScaledBitmap(bitmap, newWidth, newHeight, false);
     }
 
@@ -216,7 +236,7 @@ public class SelectionView extends View {
     protected void onDraw(Canvas canvas) {
         // Update the previous path and draw the new path.
         if (bitmap != null) {
-            canvas.drawBitmap(bitmap, 0, 0, grayscaleFilter);
+            canvas.drawBitmap(bitmap, canvasLeft, canvasTop, grayscaleFilter);
             canvas.drawPath(path, paint);
             if (adjustDone) {
                 canvas.drawPath(path, fillPaint);
@@ -235,7 +255,7 @@ public class SelectionView extends View {
         path.reset();
         path.moveTo(x, y);
         pointsList.clear();
-        pointsList.add(new PointF(x,y));
+        pointsList.add(new PointF(x-canvasLeft,y-canvasTop));
         touchStartX = startX = x;
         touchStartY = startY = y;
     }
@@ -248,7 +268,7 @@ public class SelectionView extends View {
 
         if (dx >= TOUCH_TOLERANCE || dy >= TOUCH_TOLERANCE) {
             path.quadTo(startX, startY, (x + startX) / 2, (y + startY) / 2);
-            pointsList.add(new PointF(x,y));
+            pointsList.add(new PointF(x-canvasLeft,y-canvasTop));
             startX = x;
             startY = y;
         }
@@ -401,16 +421,16 @@ public class SelectionView extends View {
             // Draw the first point of the new path.
             path.reset();
             PointF point = pointsList.get(0);
-            startX = x = point.x;
-            startY = y = point.y;
+            startX = x = point.x + canvasLeft;
+            startY = y = point.y + canvasTop;
             path.moveTo(x, y);
 
             // Draw the rest of the points of the new path.
             for (int k = 1; k < pointListSize; k++) {
                 point = pointsList.get(k);
-                path.quadTo(x, y, (point.x + x) / 2, (point.y + y) / 2);
-                x = point.x;
-                y = point.y;
+                path.quadTo(x, y, (point.x + canvasLeft + x) / 2, (point.y + canvasTop + y) / 2);
+                x = point.x + canvasLeft;
+                y = point.y + canvasTop;
             }
 
             // Finish drawing the line.
