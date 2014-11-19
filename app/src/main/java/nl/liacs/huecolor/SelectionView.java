@@ -405,9 +405,9 @@ public class SelectionView extends View {
         // Source bitmap pixels
         int[] sourcePixels = new int[sourceWidth * sourceHeight];
         bitmap.getPixels(sourcePixels, 0, sourceWidth, 0, 0, sourceWidth, sourceHeight);
-        bucketWidth = sourceWidth / BLOCK_SIZE;
-        bucketHeight = sourceHeight / BLOCK_SIZE;
-        edgePointBuckets = new PointsList[bucketWidth+1][bucketHeight+1];
+        bucketWidth = (int)Math.ceil(sourceWidth / (double)BLOCK_SIZE);
+        bucketHeight = (int)Math.ceil(sourceHeight / (double)BLOCK_SIZE);
+        edgePointBuckets = new PointsList[bucketWidth][bucketHeight];
 
         for (i = 1; i <= WIDTH_MINUS_2; i++) {
             for (j = 1; j <= HEIGHT_MINUS_2; j++) {
@@ -464,12 +464,17 @@ public class SelectionView extends View {
         try {
             // We want to move each point in the points list to the nearest edge pixel.
             int pointListSize = pointsList.size();
+            int width = bitmap.getWidth();
+            int height = bitmap.getHeight();
 
             for (PointF point : pointsList.getPoints()) {
                 Distance minDistance = new Distance(0.0f, 0.0f, Float.POSITIVE_INFINITY);
+                point.x = (point.x < 0 ? 0 : (point.x > width ? width : point.x));
+                point.y = (point.y < 0 ? 0 : (point.y > height ? height : point.y));
 
                 int i = (int)(point.x / BLOCK_SIZE);
                 int j = (int)(point.y / BLOCK_SIZE);
+
                 PointsList bucket = edgePointBuckets[i][j];
                 // Check if the point already happens to be on an edge.
                 if (bucket != null) {
@@ -483,8 +488,8 @@ public class SelectionView extends View {
                 if (minDistance.distance > 0.0f) {
                     // Check the neighbors since they might be closer
                     for (int[] neighbor : neighbors) {
-                        if (i+neighbor[0] < 0 || i+neighbor[0] > bucketWidth ||
-                            j+neighbor[1] < 0 || j+neighbor[1] > bucketHeight) {
+                        if (i+neighbor[0] < 0 || i+neighbor[0] > bucketWidth-1 ||
+                            j+neighbor[1] < 0 || j+neighbor[1] > bucketHeight-1) {
                             continue;
                         }
                         float xD = neighbor[0]*(i-minDistance.x) + (neighbor[0] == -1 ? BLOCK_SIZE : 0.0f);
