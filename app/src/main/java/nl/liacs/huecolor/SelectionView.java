@@ -1,7 +1,6 @@
 package nl.liacs.huecolor;
 
 import android.content.Context;
-import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.BitmapShader;
@@ -75,7 +74,7 @@ public class SelectionView extends View {
         public Distance findClosestPoint(PointF point, Distance minDistance) {
             float distance, x, y;
 
-            // Otherwise find the edge with the least distance from the point.
+            // Find the edge with the least distance from the point.
             for (PointF edgePoint : points) {
                 // Calculate the distance from the point to this edge point.
                 x = edgePoint.x - point.x;
@@ -281,8 +280,7 @@ public class SelectionView extends View {
         if (newHeight > viewHeight) {
             newWidth *= (float)viewHeight / (float)newHeight;
             newHeight = viewHeight;
-        }
-        else if (newWidth > viewWidth) {
+        } else if (newWidth > viewWidth) {
             newHeight *= (float)viewWidth / (float)newWidth;
             newWidth = viewWidth;
         }
@@ -329,7 +327,7 @@ public class SelectionView extends View {
 
         if (dx >= TOUCH_TOLERANCE || dy >= TOUCH_TOLERANCE) {
             path.quadTo(startX, startY, (x + startX) / 2, (y + startY) / 2);
-            pointsList.add(new PointF(x-canvasLeft,y-canvasTop));
+            pointsList.add(new PointF(x - canvasLeft, y - canvasTop));
             startX = x;
             startY = y;
         }
@@ -471,23 +469,22 @@ public class SelectionView extends View {
                 if (bucket != null) {
                     if (bucket.has(point)) {
                         minDistance = new Distance(point.x, point.y, 0.0f);
-                    }
-                    else {
+                    } else {
                         bucket.findClosestPoint(point, minDistance);
                     }
                 }
                 if (minDistance.distance > 0.0f) {
                     // Check the neighbors since they might be closer
                     for (int[] neighbor : neighbors) {
-                        if (i+neighbor[0] < 0 || i+neighbor[0] > bucketWidth-1 ||
-                            j+neighbor[1] < 0 || j+neighbor[1] > bucketHeight-1) {
+                        if (i + neighbor[0] < 0 || i + neighbor[0] > bucketWidth - 1 ||
+                            j + neighbor[1] < 0 || j + neighbor[1] > bucketHeight - 1) {
                             continue;
                         }
-                        float xD = neighbor[0]*(i-minDistance.x) + (neighbor[0] == -1 ? BLOCK_SIZE : 0.0f);
-                        float yD = neighbor[1]*(j-minDistance.y) + (neighbor[1] == -1 ? BLOCK_SIZE : 0.0f);
+                        float xD = neighbor[0] * (i-minDistance.x) + (neighbor[0] == -1 ? BLOCK_SIZE : 0.0f);
+                        float yD = neighbor[1] * (j-minDistance.y) + (neighbor[1] == -1 ? BLOCK_SIZE : 0.0f);
                         if (xD * xD + yD * yD < minDistance.distance * minDistance.distance) {
                             // Check neighbor since we're close to it
-                            bucket = edgePointBuckets[i+neighbor[0]][j+neighbor[1]];
+                            bucket = edgePointBuckets[i + neighbor[0]][j + neighbor[1]];
                             if (bucket != null) {
                                 bucket.findClosestPoint(point, minDistance);
                             }
