@@ -192,6 +192,13 @@ public class SelectionView extends View {
         if (bitmap == null) {
             bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.example, options);
         }
+
+        // Scale the bitmap to prevent memory issues during edge detection and to make it fit on the screen.
+        bitmap = scaleToView(bitmap);
+
+        // Scale the image to the device by specifying its density.
+        DisplayMetrics metrics = getResources().getDisplayMetrics();
+        bitmap.setDensity((int)(metrics.density * 160f));
     }
 
     public void applyFilter(int filterOption) {
@@ -209,13 +216,6 @@ public class SelectionView extends View {
     @Override
     protected void onSizeChanged(int w, int h, int oldWidth, int oldHeight) {
         super.onSizeChanged(w, h, oldWidth, oldHeight);
-
-        // Scale the bitmap to prevent memory issues during edge detection and to make it fit on the screen.
-        bitmap = scaleToView(bitmap);
-
-        // Scale the image to the device by specifying its density.
-        DisplayMetrics metrics = getResources().getDisplayMetrics();
-        bitmap.setDensity((int)(metrics.density * 160f));
 
         // Initialize the BitmapShader with the Bitmap object and set the texture tile mode
         BitmapShader fillShader = new BitmapShader(bitmap, Shader.TileMode.REPEAT, Shader.TileMode.REPEAT);
