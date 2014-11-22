@@ -15,6 +15,7 @@ import android.widget.Toast;
  */
 public class SelectionActivity extends Activity {
     private Button filterButton;
+    private SelectionView initialView;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -27,7 +28,7 @@ public class SelectionActivity extends Activity {
         }
 
         // Use a custom view for the image.
-        SelectionView initialView = new SelectionView(this, fileUri);
+        initialView = new SelectionView(this, fileUri, 0);
         setContentView(initialView);
     }
 
@@ -42,13 +43,15 @@ public class SelectionActivity extends Activity {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.filterOne:
-                Toast.makeText(SelectionActivity.this, R.string.filter_one, Toast.LENGTH_LONG).show();
+                initialView.applyFilter(1);
                 break;
             case R.id.filterTwo:
                 Toast.makeText(SelectionActivity.this, R.string.filter_two, Toast.LENGTH_LONG).show();
+                //initialView.applyFilter(2);
                 break;
             case R.id.filterThree:
                 Toast.makeText(SelectionActivity.this, R.string.filter_three, Toast.LENGTH_LONG).show();
+                //initialView.applyFilter(3);
                 break;
             default:
                 return super.onOptionsItemSelected(item);

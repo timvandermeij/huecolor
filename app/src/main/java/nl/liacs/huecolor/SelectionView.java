@@ -6,8 +6,6 @@ import android.graphics.BitmapFactory;
 import android.graphics.BitmapShader;
 import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.ColorMatrix;
-import android.graphics.ColorMatrixColorFilter;
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Path;
@@ -98,12 +96,11 @@ public class SelectionView extends View {
     private Canvas canvas = null;
     private int canvasLeft = 0, canvasTop = 0;
     private Bitmap bitmap = null;
-    private Paint grayscaleFilter;
+    private Bitmap alteredBitmap = null;
 
     // Drawing
     private Paint paint;
     private Paint fillPaint;
-    private BitmapShader fillShader;
     private Path path;
     private float touchStartX, touchStartY; // Used for closing an incomplete path
     private float startX, startY; // Used for calculating new point of line
@@ -134,10 +131,10 @@ public class SelectionView extends View {
     private boolean adjustDone = false;
 
     public SelectionView(Context context) {
-        this(context, null);
+        this(context, null, 0);
     }
 
-    public SelectionView(Context context, Uri fileUri) {
+    public SelectionView(Context context, Uri fileUri, int filterOption) {
         super(context);
         this.fileUri = fileUri;
 
@@ -166,18 +163,14 @@ public class SelectionView extends View {
         fillPaint.setStrokeJoin(Paint.Join.ROUND);
         fillPaint.setStrokeCap(Paint.Cap.ROUND);
 
-        // Convert the image to grayscale.
-        ColorMatrix matrix = new ColorMatrix();
-        matrix.setSaturation(0);
-        ColorMatrixColorFilter filter = new ColorMatrixColorFilter(matrix);
-        grayscaleFilter = new Paint(Paint.DITHER_FLAG);
-        grayscaleFilter.setColorFilter(filter);
+        // Load the image
+        loadImage();
+
+        // Convert the image with the desired filter.
+        applyFilter(filterOption);
     }
 
-    @Override
-    protected void onSizeChanged(int w, int h, int oldWidth, int oldHeight) {
-        super.onSizeChanged(w, h, oldWidth, oldHeight);
-
+    protected void loadImage() {
         // Set the image options.
         BitmapFactory.Options options = new BitmapFactory.Options();
         options.inDither = true;
@@ -199,6 +192,23 @@ public class SelectionView extends View {
         if (bitmap == null) {
             bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.example, options);
         }
+    }
+
+    public void applyFilter(int filterOption) {
+        Filters filters = new Filters();
+        switch(filterOption) {
+            case 0:
+                alteredBitmap = filters.grayScaleFilter(bitmap);
+                break;
+            case 1:
+                alteredBitmap = filters.invertFilter(bitmap);
+                break;
+        }
+    }
+
+    @Override
+    protected void onSizeChanged(int w, int h, int oldWidth, int oldHeight) {
+        super.onSizeChanged(w, h, oldWidth, oldHeight);
 
         // Scale the bitmap to prevent memory issues during edge detection and to make it fit on the screen.
         bitmap = scaleToView(bitmap);
@@ -208,7 +218,7 @@ public class SelectionView extends View {
         bitmap.setDensity((int)(metrics.density * 160f));
 
         // Initialize the BitmapShader with the Bitmap object and set the texture tile mode
-        fillShader = new BitmapShader(bitmap, Shader.TileMode.REPEAT, Shader.TileMode.REPEAT);
+        BitmapShader fillShader = new BitmapShader(bitmap, Shader.TileMode.REPEAT, Shader.TileMode.REPEAT);
         Matrix m = new Matrix();
         m.postTranslate(canvasLeft, canvasTop);
         fillShader.setLocalMatrix(m);
@@ -295,7 +305,7 @@ public class SelectionView extends View {
     protected void onDraw(Canvas canvas) {
         // Update the previous path and draw the new path.
         if (bitmap != null) {
-            canvas.drawBitmap(bitmap, canvasLeft, canvasTop, grayscaleFilter);
+            canvas.drawBitmap(alteredBitmap, canvasLeft, canvasTop, null);
             canvas.drawPath(path, paint);
             if (adjustDone) {
                 canvas.drawPath(path, fillPaint);
