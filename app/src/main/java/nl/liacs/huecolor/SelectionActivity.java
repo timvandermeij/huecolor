@@ -16,6 +16,10 @@ import android.widget.Button;
 public class SelectionActivity extends Activity {
     private Button filterButton;
     private SelectionView initialView;
+    private final int INVERT_FILTER = 1;
+    private final int SEPIA_FILTER = 2;
+    private final int SNOW_FILTER = 3;
+    private final int GRAYSCALE_FILTER = 4;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,16 +54,16 @@ public class SelectionActivity extends Activity {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.invertFilter:
-                initialView.applyFilter(1);
+                initialView.applyFilter(INVERT_FILTER);
                 break;
             case R.id.sepiaFilter:
-                initialView.applyFilter(2);
-                break;
-            case R.id.grayscaleFilter:
-                initialView.applyFilter(3);
+                initialView.applyFilter(SEPIA_FILTER);
                 break;
             case R.id.snowFilter:
-                initialView.applyFilter(4);
+                initialView.applyFilter(SNOW_FILTER);
+                break;
+            case R.id.grayscaleFilter:
+                initialView.applyFilter(GRAYSCALE_FILTER);
                 break;
             default:
                 return super.onOptionsItemSelected(item);

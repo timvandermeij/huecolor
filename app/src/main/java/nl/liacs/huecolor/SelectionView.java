@@ -131,6 +131,12 @@ public class SelectionView extends View {
 
     private boolean adjustDone = false;
 
+    // Filter constants
+    private final int INVERT_FILTER = 1;
+    private final int SEPIA_FILTER = 2;
+    private final int SNOW_FILTER = 3;
+    private final int GRAYSCALE_FILTER = 4;
+
     public SelectionView(Context context) {
         this(context, null, 0);
     }
@@ -198,18 +204,18 @@ public class SelectionView extends View {
 
         this.currentFilter = filterOption;
         switch(filterOption) {
-            case 0:
-            case 3:
-                alteredBitmap = filters.grayscale();
-                break;
-            case 1:
+            case INVERT_FILTER:
                 alteredBitmap = filters.invert();
                 break;
-            case 2:
+            case SEPIA_FILTER:
                 alteredBitmap = filters.sepia();
                 break;
-            case 4:
+            case SNOW_FILTER:
                 alteredBitmap = filters.snow();
+                break;
+            case GRAYSCALE_FILTER:
+            default:
+                alteredBitmap = filters.grayscale();
                 break;
         }
         invalidate();
