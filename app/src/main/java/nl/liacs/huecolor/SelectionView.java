@@ -12,6 +12,7 @@ import android.graphics.Path;
 import android.graphics.PointF;
 import android.graphics.Shader;
 import android.net.Uri;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.ParcelFileDescriptor;
 import android.util.DisplayMetrics;
@@ -100,6 +101,7 @@ public class SelectionView extends View {
     private Canvas canvas = null;
     private int canvasLeft = 0, canvasTop = 0;
     private Bitmap bitmap = null;
+    private int bitmapWidth = 0, bitmapHeight = 0;
     private Bitmap alteredBitmap = null;
     private int currentFilter = 0;
 
@@ -232,14 +234,14 @@ public class SelectionView extends View {
     protected void onSizeChanged(int w, int h, int oldWidth, int oldHeight) {
         super.onSizeChanged(w, h, oldWidth, oldHeight);
 
-        int oldBitmapWidth = bitmap.getWidth();
-        int oldBitmapHeight = bitmap.getHeight();
+        int oldBitmapWidth = bitmapWidth;
+        int oldBitmapHeight = bitmapHeight;
 
         // Scale the bitmap to prevent memory issues during edge detection and to make it fit on the screen.
         bitmap = scaleToView(bitmap);
 
-        int bitmapWidth = bitmap.getWidth();
-        int bitmapHeight = bitmap.getHeight();
+        bitmapWidth = bitmap.getWidth();
+        bitmapHeight = bitmap.getHeight();
 
         // Scale the image to the device by specifying its density.
         DisplayMetrics metrics = getResources().getDisplayMetrics();
@@ -361,6 +363,26 @@ public class SelectionView extends View {
         return Bitmap.createScaledBitmap(bitmap, newWidth, newHeight, false);
     }
 
+    public void saveState(Bundle outState) {
+        outState.putString("fileUri", (fileUri == null ? null : fileUri.toString()));
+        outState.putInt("currentFilter", currentFilter);
+        outState.putParcelableArrayList("pointsList", pointsList.getPoints());
+        outState.putBoolean("adjustDone", adjustDone);
+        outState.putInt("bitmapWidth", bitmap.getWidth());
+        outState.putInt("bitmapHeight", bitmap.getHeight());
+    }
+
+    public void restoreState(Bundle savedInstanceState) {
+        String uri = savedInstanceState.getString("fileUri");
+        fileUri = (uri == null ? null : Uri.parse(uri));
+        currentFilter = savedInstanceState.getInt("currentFilter");
+        pointsList = new PointsList(savedInstanceState.<PointF>getParcelableArrayList("pointsList"));
+        adjustDone = savedInstanceState.getBoolean("adjustDone");
+        bitmapWidth = savedInstanceState.getInt("bitmapWidth");
+        bitmapHeight = savedInstanceState.getInt("bitmapHeight");
+        loadImage();
+    }
+
     @Override
     protected void onDraw(Canvas canvas) {
         // Update the previous path and draw the new path.
@@ -455,10 +477,8 @@ public class SelectionView extends View {
      */
     @SuppressWarnings("UnusedAssignment")
     private void detectEdges(final int[][] knl) {
-        int sourceWidth = bitmap.getWidth();
-        int sourceHeight = bitmap.getHeight();
-        int WIDTH_MINUS_2 = sourceWidth - 2;
-        int HEIGHT_MINUS_2 = sourceHeight - 2;
+        int WIDTH_MINUS_2 = bitmapWidth - 2;
+        int HEIGHT_MINUS_2 = bitmapHeight - 2;
 
         int i, j, k, l; // Iterators
         int subSumR = 0, subSumG = 0, subSumB = 0; // Color components
@@ -466,10 +486,10 @@ public class SelectionView extends View {
         int x = 0, y = 0;
 
         // Source bitmap pixels
-        int[] sourcePixels = new int[sourceWidth * sourceHeight];
-        bitmap.getPixels(sourcePixels, 0, sourceWidth, 0, 0, sourceWidth, sourceHeight);
-        bucketWidth = (int)Math.ceil(sourceWidth / (double)BLOCK_SIZE);
-        bucketHeight = (int)Math.ceil(sourceHeight / (double)BLOCK_SIZE);
+        int[] sourcePixels = new int[bitmapWidth * bitmapHeight];
+        bitmap.getPixels(sourcePixels, 0, bitmapWidth, 0, 0, bitmapWidth, bitmapHeight);
+        bucketWidth = (int)Math.ceil(bitmapWidth / (double)BLOCK_SIZE);
+        bucketHeight = (int)Math.ceil(bitmapHeight / (double)BLOCK_SIZE);
         edgePointBuckets = new PointsList[bucketWidth][bucketHeight];
 
         for (i = 1; i <= WIDTH_MINUS_2; i++) {
@@ -479,7 +499,7 @@ public class SelectionView extends View {
                     x = i - 1 + k;
                     for (l = 0; l < KERNEL_HEIGHT; l++) {
                         y = j - 1 + l;
-                        pixel = sourcePixels[y * sourceWidth + x];
+                        pixel = sourcePixels[y * bitmapWidth + x];
                         knlCache = knl[k][l];
                         subSumR += ((pixel >> 16) & 0xFF) * knlCache; // Red component
                         subSumG += ((pixel >> 8) & 0xFF) * knlCache; // Green component
@@ -527,13 +547,11 @@ public class SelectionView extends View {
         try {
             // We want to move each point in the points list to the nearest edge pixel.
             int pointListSize = pointsList.size();
-            int width = bitmap.getWidth();
-            int height = bitmap.getHeight();
 
             for (PointF point : pointsList.getPoints()) {
                 Distance minDistance = new Distance(0.0f, 0.0f, Float.POSITIVE_INFINITY);
-                point.x = (point.x < 0 ? 0 : (point.x > width ? width : point.x));
-                point.y = (point.y < 0 ? 0 : (point.y > height ? height : point.y));
+                point.x = (point.x < 0 ? 0 : (point.x > bitmapWidth ? bitmapWidth : point.x));
+                point.y = (point.y < 0 ? 0 : (point.y > bitmapHeight ? bitmapHeight : point.y));
 
                 int i = (int)(point.x / BLOCK_SIZE);
                 int j = (int)(point.y / BLOCK_SIZE);

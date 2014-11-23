@@ -24,8 +24,7 @@
         </activity>
         <activity
             android:name="nl.liacs.huecolor.SelectionActivity"
-            android:label="@string/select_object"
-            android:configChanges="keyboardHidden|orientation|screenSize" >
+            android:label="@string/select_object" >
             <intent-filter>
                 <action android:name="nl.liacs.huecolor.select" />
 

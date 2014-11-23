@@ -28,14 +28,18 @@ public class SelectionActivity extends Activity {
 
         // Use a custom view for the image.
         initialView = new SelectionView(this, fileUri, SelectionView.GRAYSCALE_FILTER);
+        if (savedInstanceState != null) {
+            initialView.restoreState(savedInstanceState);
+        }
         setContentView(initialView);
     }
 
     @Override
-    public void onConfigurationChanged(Configuration newConfig) {
-        super.onConfigurationChanged(newConfig);
-        setContentView(initialView);
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        initialView.saveState(outState);
     }
+
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
