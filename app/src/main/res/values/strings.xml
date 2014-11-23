@@ -7,6 +7,5 @@
     <string name="invertFilter">Invert</string>
     <string name="sepiaFilter">Sepia</string>
     <string name="grayscaleFilter">Grayscale</string>
-    <string name="reflectionFilter">Reflection</string>
     <string name="snowFilter">Snow</string>
 </resources>
