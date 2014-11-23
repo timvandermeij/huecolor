@@ -118,20 +118,22 @@ public class SelectionView extends View {
         {0, -1, 0}
     };
 
+    // Edge detection
     private final static int BLOCK_SIZE = 10;
     private PointsList[][] edgePointBuckets = null;
     private int bucketHeight = 0;
     private int bucketWidth = 0;
     private final static int[][] neighbors = {
-            {-1,-1}, {0,-1}, {1, -1}, {1, 0}, {1, 1}, {0, 1}, {-1, 1}, {-1, 0}
+        {-1,-1}, {0,-1}, {1, -1}, {1, 0}, {1, 1}, {0, 1}, {-1, 1}, {-1, 0}
     };
 
+    // Path adjustment
     private Handler handler = new Handler();
     private Thread adjustPathThread = null;
-
     private boolean adjustDone = false;
 
-    // Filter constants
+    // Filters
+    Filters filters;
     private final int INVERT_FILTER = 1;
     private final int SEPIA_FILTER = 2;
     private final int SNOW_FILTER = 3;
@@ -197,11 +199,12 @@ public class SelectionView extends View {
         if (bitmap == null) {
             bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.example, options);
         }
+
+        // Initialize the filters
+        filters = new Filters(bitmap);
     }
 
     public void applyFilter(int filterOption) {
-        Filters filters = new Filters(bitmap);
-
         this.currentFilter = filterOption;
         switch(filterOption) {
             case INVERT_FILTER:
@@ -231,6 +234,9 @@ public class SelectionView extends View {
         // Scale the image to the device by specifying its density.
         DisplayMetrics metrics = getResources().getDisplayMetrics();
         bitmap.setDensity((int)(metrics.density * 160f));
+
+        // Reinitialize the filters
+        filters = new Filters(bitmap);
 
         // Copy the original bitmap into the altered Bitmap.
         alteredBitmap = Bitmap.createBitmap(bitmap);
