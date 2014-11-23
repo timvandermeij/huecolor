@@ -205,20 +205,20 @@ public class SelectionView extends View {
     }
 
     public void applyFilter(int filterOption) {
-        Filters filters = new Filters();
+        Filters filters = new Filters(bitmap);
         switch(filterOption) {
             case 0:
             case 3:
-                alteredBitmap = filters.grayScaleFilter(bitmap);
+                alteredBitmap = filters.grayScaleFilter();
                 break;
             case 1:
-                alteredBitmap = filters.invertFilter(bitmap);
+                alteredBitmap = filters.invertFilter();
                 break;
             case 2:
-                alteredBitmap = filters.sepiaFilter(bitmap);
+                alteredBitmap = filters.sepiaFilter();
                 break;
             case 4:
-                alteredBitmap = filters.snowFilter(bitmap);
+                alteredBitmap = filters.snowFilter();
                 break;
         }
         invalidate();

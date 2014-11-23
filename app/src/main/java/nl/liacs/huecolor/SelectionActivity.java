@@ -15,6 +15,7 @@ import android.widget.Button;
 public class SelectionActivity extends Activity {
     private Button filterButton;
     private SelectionView initialView;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
