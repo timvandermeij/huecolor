@@ -224,6 +224,7 @@ public class SelectionView extends View {
                 alteredBitmap = filters.snowFilter(bitmap);
                 break;
         }
+        invalidate();
 
     }
 
