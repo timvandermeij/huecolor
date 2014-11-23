@@ -2,6 +2,7 @@ package nl.liacs.huecolor;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.Menu;
@@ -28,6 +29,12 @@ public class SelectionActivity extends Activity {
 
         // Use a custom view for the image.
         initialView = new SelectionView(this, fileUri, 0);
+        setContentView(initialView);
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
         setContentView(initialView);
     }
 

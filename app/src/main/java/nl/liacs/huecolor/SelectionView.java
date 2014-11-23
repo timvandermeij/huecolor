@@ -97,6 +97,7 @@ public class SelectionView extends View {
     private int canvasLeft = 0, canvasTop = 0;
     private Bitmap bitmap = null;
     private Bitmap alteredBitmap = null;
+    private int currentFilter = 0;
 
     // Drawing
     private Paint paint;
@@ -137,6 +138,7 @@ public class SelectionView extends View {
     public SelectionView(Context context, Uri fileUri, int filterOption) {
         super(context);
         this.fileUri = fileUri;
+        this.currentFilter = filterOption;
 
         path = new Path();
 
@@ -165,9 +167,6 @@ public class SelectionView extends View {
 
         // Load the image
         loadImage();
-
-        // Convert the image with the desired filter.
-        applyFilter(filterOption);
     }
 
     protected void loadImage() {
@@ -192,20 +191,11 @@ public class SelectionView extends View {
         if (bitmap == null) {
             bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.example, options);
         }
-
-        // Scale the bitmap to prevent memory issues during edge detection and to make it fit on the screen.
-        bitmap = scaleToView(bitmap);
-
-        // Scale the image to the device by specifying its density.
-        DisplayMetrics metrics = getResources().getDisplayMetrics();
-        bitmap.setDensity((int)(metrics.density * 160f));
-
-        // Copy the original bitmap into the altered Bitmap.
-        alteredBitmap = Bitmap.createBitmap(bitmap);
     }
 
     public void applyFilter(int filterOption) {
         Filters filters = new Filters();
+        this.currentFilter = filterOption;
         switch(filterOption) {
             case 0:
             case 3:
@@ -231,6 +221,19 @@ public class SelectionView extends View {
     @Override
     protected void onSizeChanged(int w, int h, int oldWidth, int oldHeight) {
         super.onSizeChanged(w, h, oldWidth, oldHeight);
+
+        // Scale the bitmap to prevent memory issues during edge detection and to make it fit on the screen.
+        bitmap = scaleToView(bitmap);
+
+        // Scale the image to the device by specifying its density.
+        DisplayMetrics metrics = getResources().getDisplayMetrics();
+        bitmap.setDensity((int)(metrics.density * 160f));
+
+        // Copy the original bitmap into the altered Bitmap.
+        alteredBitmap = Bitmap.createBitmap(bitmap);
+
+        // Convert the image with the desired filter.
+        applyFilter(currentFilter);
 
         // Initialize the BitmapShader with the Bitmap object and set the texture tile mode
         BitmapShader fillShader = new BitmapShader(bitmap, Shader.TileMode.REPEAT, Shader.TileMode.REPEAT);
@@ -319,7 +322,7 @@ public class SelectionView extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         // Update the previous path and draw the new path.
-        if (bitmap != null) {
+        if (alteredBitmap != null) {
             canvas.drawBitmap(alteredBitmap, canvasLeft, canvasTop, null);
             canvas.drawPath(path, paint);
             if (adjustDone) {
