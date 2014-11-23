@@ -8,7 +8,6 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.widget.Button;
-import android.widget.Toast;
 
 /**
  * Based on https://code.google.com/p/apidemos/source/browse/trunk/ApiDemos/src/com/example/android/apis/graphics/FingerPaint.java
@@ -42,17 +41,18 @@ public class SelectionActivity extends Activity {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
-            case R.id.filterOne:
+            case R.id.invertFilter:
                 initialView.applyFilter(1);
                 break;
-            case R.id.filterTwo:
-                Toast.makeText(SelectionActivity.this, R.string.filter_two, Toast.LENGTH_LONG).show();
-                //initialView.applyFilter(2);
+            case R.id.sepiaFilter:
+                initialView.applyFilter(2);
                 break;
-            case R.id.filterThree:
-                Toast.makeText(SelectionActivity.this, R.string.filter_three, Toast.LENGTH_LONG).show();
-                //initialView.applyFilter(3);
+            case R.id.grayscaleFilter:
+                initialView.applyFilter(3);
                 break;
+            /*case R.id.reflectionFilter:
+                initialView.applyFilter(4);
+                break;*/
             default:
                 return super.onOptionsItemSelected(item);
         }

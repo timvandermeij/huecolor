@@ -1,12 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
-        android:id="@+id/filterOne"
-        android:title="@string/filter_one"/>
+        android:id="@+id/invertFilter"
+        android:title="@string/invertFilter"/>
     <item
-        android:id="@+id/filterTwo"
-        android:title="@string/filter_two"/>
+        android:id="@+id/sepiaFilter"
+        android:title="@string/sepiaFilter"/>
     <item
-        android:id="@+id/filterThree"
-        android:title="@string/filter_three"/>
+        android:id="@+id/grayscaleFilter"
+        android:title="@string/grayscaleFilter"/>
+    <!--<item
+        android:id="@+id/reflectionFilter"
+        android:title="@string/reflectionFilter"/>-->
 </menu>

@@ -199,18 +199,29 @@ public class SelectionView extends View {
         // Scale the image to the device by specifying its density.
         DisplayMetrics metrics = getResources().getDisplayMetrics();
         bitmap.setDensity((int)(metrics.density * 160f));
+
+        // Copy the original bitmap into the altered Bitmap.
+        alteredBitmap = Bitmap.createBitmap(bitmap);
     }
 
     public void applyFilter(int filterOption) {
         Filters filters = new Filters();
         switch(filterOption) {
             case 0:
+            case 3:
                 alteredBitmap = filters.grayScaleFilter(bitmap);
                 break;
             case 1:
                 alteredBitmap = filters.invertFilter(bitmap);
                 break;
+            case 2:
+                alteredBitmap = filters.sepiaFilter(bitmap);
+                break;
+            case 4:
+                alteredBitmap = filters.reflectionFilter(bitmap);
+                break;
         }
+
     }
 
     @Override
