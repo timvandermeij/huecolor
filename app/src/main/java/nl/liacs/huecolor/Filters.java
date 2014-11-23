@@ -99,28 +99,27 @@ public class Filters {
 
     public Bitmap snow() {
         int[] pixels = new int[sourceWidth * sourceHeight];
-        int red, green, blue, index = 0, threshold = 50;
-        // Create an output Bitmap with the settings of the original
-        Bitmap snowApplied = Bitmap.createBitmap(sourceWidth, sourceHeight, Bitmap.Config.RGB_565);
+        int red, green, blue, pixel, threshold;
+        Bitmap target = Bitmap.createBitmap(sourceWidth, sourceHeight, sourceBitmap.getConfig());
+        Random random = new Random();
+
         // Get the pixel array of the original bitmap.
         sourceBitmap.getPixels(pixels, 0, sourceWidth, 0, 0, sourceWidth, sourceHeight);
-        // Commence randomness.
-        Random random = new Random();
-        // Scan through the original Bitmap
+
+        // Apply the snow effect.
         for(int i = 0; i < sourceWidth; i++) {
             for(int j = 0; j < sourceHeight; j++) {
-                // Get current index in the 2D-matrix.
-                index = i + sourceWidth * j;
-                red = Color.red(pixels[index]);
-                green = Color.green(pixels[index]);
-                blue = Color.blue(pixels[index]);
+                pixel = pixels[i + sourceWidth * j];
+                red = (pixel >> 16) & 0xFF; // Red component
+                green = (pixel >> 8) & 0xFF; // Green component
+                blue = pixel & 0xFF; // Blue component
                 threshold = random.nextInt(0xFF);
                 if(red > threshold && green > threshold && blue > threshold) {
-                    pixels[index] = Color.rgb(0xFF, 0xFF, 0xFF);
+                    pixels[i + sourceWidth * j] = Color.argb(pixel >>> 24, 0xff, 0xff, 0xff);
                 }
             }
         }
-        snowApplied.setPixels(pixels, 0, sourceWidth, 0, 0, sourceWidth, sourceHeight);
-        return snowApplied;
+        target.setPixels(pixels, 0, sourceWidth, 0, 0, sourceWidth, sourceHeight);
+        return target;
     }
 }
