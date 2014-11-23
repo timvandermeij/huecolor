@@ -1,14 +1,7 @@
 package nl.liacs.huecolor;
 
 import android.graphics.Bitmap;
-import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.LinearGradient;
-import android.graphics.Matrix;
-import android.graphics.Paint;
-import android.graphics.PorterDuff;
-import android.graphics.PorterDuffXfermode;
-import android.graphics.Shader;
 
 import java.util.Random;
 
@@ -73,34 +66,6 @@ public class Filters {
             }
         }
         return sepiaApplied;
-    }
-
-    // Possibility, but not within the purpose of this app, nor usable at the moment.
-    public Bitmap reflectionFilter(Bitmap original) {
-        // Gap space between the original and the reflected bitmap.
-        final int gap = 4;
-        int originalWidth = original.getWidth(), originalHeight = original.getHeight();
-        // Matrix to flip on the Y axis.
-        Matrix matrix = new Matrix();
-        matrix.preScale(1, -1);
-        // Flipped lower half of the original Bitmap
-        Bitmap reflection = Bitmap.createBitmap(original, 0, originalHeight/2, originalWidth, originalHeight/2, matrix, false);
-        // Output bitmap, taller to also fit reflection
-        Bitmap reflected = Bitmap.createBitmap(originalWidth, (int) (1.5 * originalHeight), Bitmap.Config.ARGB_8888);
-
-        // Combine gap with reflection and original bitmap.
-        Canvas canvas = new Canvas(reflected);
-        canvas.drawBitmap(original, 0, 0, null);
-        Paint firstPaint = new Paint();
-        canvas.drawRect(0, originalHeight, originalWidth, originalHeight + gap, firstPaint);
-        canvas.drawBitmap(reflection, 0, originalHeight + gap, null);
-        Paint secondPaint = new Paint();
-        LinearGradient gradient = new LinearGradient(0, originalHeight, 0, reflected.getHeight() + gap,
-                                                     0x70ffffff, 0x00ffffff, Shader.TileMode.CLAMP);
-        secondPaint.setShader(gradient);
-        secondPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.DST_IN));
-        canvas.drawRect(0, originalHeight, originalWidth, reflected.getHeight() + gap, secondPaint);
-        return reflected;
     }
 
     public Bitmap snowFilter(Bitmap original) {
