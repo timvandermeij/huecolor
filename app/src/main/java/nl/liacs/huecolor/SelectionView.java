@@ -6,8 +6,6 @@ import android.graphics.BitmapFactory;
 import android.graphics.BitmapShader;
 import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.ColorMatrix;
-import android.graphics.ColorMatrixColorFilter;
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Path;
@@ -98,12 +96,12 @@ public class SelectionView extends View {
     private Canvas canvas = null;
     private int canvasLeft = 0, canvasTop = 0;
     private Bitmap bitmap = null;
-    private Paint grayscaleFilter;
+    private Bitmap alteredBitmap = null;
+    private int currentFilter = 0;
 
     // Drawing
     private Paint paint;
     private Paint fillPaint;
-    private BitmapShader fillShader;
     private Path path;
     private float touchStartX, touchStartY; // Used for closing an incomplete path
     private float startX, startY; // Used for calculating new point of line
@@ -120,26 +118,35 @@ public class SelectionView extends View {
         {0, -1, 0}
     };
 
+    // Edge detection
     private final static int BLOCK_SIZE = 10;
     private PointsList[][] edgePointBuckets = null;
     private int bucketHeight = 0;
     private int bucketWidth = 0;
     private final static int[][] neighbors = {
-            {-1,-1}, {0,-1}, {1, -1}, {1, 0}, {1, 1}, {0, 1}, {-1, 1}, {-1, 0}
+        {-1,-1}, {0,-1}, {1, -1}, {1, 0}, {1, 1}, {0, 1}, {-1, 1}, {-1, 0}
     };
 
+    // Path adjustment
     private Handler handler = new Handler();
     private Thread adjustPathThread = null;
-
     private boolean adjustDone = false;
 
+    // Filters
+    Filters filters;
+    private final int INVERT_FILTER = 1;
+    private final int SEPIA_FILTER = 2;
+    private final int SNOW_FILTER = 3;
+    private final int GRAYSCALE_FILTER = 4;
+
     public SelectionView(Context context) {
-        this(context, null);
+        this(context, null, 0);
     }
 
-    public SelectionView(Context context, Uri fileUri) {
+    public SelectionView(Context context, Uri fileUri, int filterOption) {
         super(context);
         this.fileUri = fileUri;
+        this.currentFilter = filterOption;
 
         path = new Path();
 
@@ -166,18 +173,11 @@ public class SelectionView extends View {
         fillPaint.setStrokeJoin(Paint.Join.ROUND);
         fillPaint.setStrokeCap(Paint.Cap.ROUND);
 
-        // Convert the image to grayscale.
-        ColorMatrix matrix = new ColorMatrix();
-        matrix.setSaturation(0);
-        ColorMatrixColorFilter filter = new ColorMatrixColorFilter(matrix);
-        grayscaleFilter = new Paint(Paint.DITHER_FLAG);
-        grayscaleFilter.setColorFilter(filter);
+        // Load the image
+        loadImage();
     }
 
-    @Override
-    protected void onSizeChanged(int w, int h, int oldWidth, int oldHeight) {
-        super.onSizeChanged(w, h, oldWidth, oldHeight);
-
+    protected void loadImage() {
         // Set the image options.
         BitmapFactory.Options options = new BitmapFactory.Options();
         options.inDither = true;
@@ -200,6 +200,34 @@ public class SelectionView extends View {
             bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.example, options);
         }
 
+        // Initialize the filters
+        filters = new Filters(bitmap);
+    }
+
+    public void applyFilter(int filterOption) {
+        this.currentFilter = filterOption;
+        switch(filterOption) {
+            case INVERT_FILTER:
+                alteredBitmap = filters.invert();
+                break;
+            case SEPIA_FILTER:
+                alteredBitmap = filters.sepia();
+                break;
+            case SNOW_FILTER:
+                alteredBitmap = filters.snow();
+                break;
+            case GRAYSCALE_FILTER:
+            default:
+                alteredBitmap = filters.grayscale();
+                break;
+        }
+        invalidate();
+    }
+
+    @Override
+    protected void onSizeChanged(int w, int h, int oldWidth, int oldHeight) {
+        super.onSizeChanged(w, h, oldWidth, oldHeight);
+
         // Scale the bitmap to prevent memory issues during edge detection and to make it fit on the screen.
         bitmap = scaleToView(bitmap);
 
@@ -207,8 +235,17 @@ public class SelectionView extends View {
         DisplayMetrics metrics = getResources().getDisplayMetrics();
         bitmap.setDensity((int)(metrics.density * 160f));
 
+        // Reinitialize the filters
+        filters = new Filters(bitmap);
+
+        // Copy the original bitmap into the altered Bitmap.
+        alteredBitmap = Bitmap.createBitmap(bitmap);
+
+        // Convert the image with the desired filter.
+        applyFilter(currentFilter);
+
         // Initialize the BitmapShader with the Bitmap object and set the texture tile mode
-        fillShader = new BitmapShader(bitmap, Shader.TileMode.REPEAT, Shader.TileMode.REPEAT);
+        BitmapShader fillShader = new BitmapShader(bitmap, Shader.TileMode.REPEAT, Shader.TileMode.REPEAT);
         Matrix m = new Matrix();
         m.postTranslate(canvasLeft, canvasTop);
         fillShader.setLocalMatrix(m);
@@ -294,8 +331,8 @@ public class SelectionView extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         // Update the previous path and draw the new path.
-        if (bitmap != null) {
-            canvas.drawBitmap(bitmap, canvasLeft, canvasTop, grayscaleFilter);
+        if (alteredBitmap != null) {
+            canvas.drawBitmap(alteredBitmap, canvasLeft, canvasTop, null);
             canvas.drawPath(path, paint);
             if (adjustDone) {
                 canvas.drawPath(path, fillPaint);

@@ -4,7 +4,8 @@
     <string name="take_camera_photo">Take photo with camera</string>
     <string name="browse_photo">Browse for photo</string>
     <string name="select_object">Select object</string>
-    <string name="filter_one">Filter one</string>
-    <string name="filter_two">Filter two</string>
-    <string name="filter_three">Filter three</string>
+    <string name="invertFilter">Invert</string>
+    <string name="sepiaFilter">Sepia</string>
+    <string name="grayscaleFilter">Grayscale</string>
+    <string name="snowFilter">Snow</string>
 </resources>

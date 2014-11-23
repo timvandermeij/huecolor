@@ -2,19 +2,25 @@ package nl.liacs.huecolor;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.widget.Button;
-import android.widget.Toast;
 
 /**
  * Based on https://code.google.com/p/apidemos/source/browse/trunk/ApiDemos/src/com/example/android/apis/graphics/FingerPaint.java
  */
 public class SelectionActivity extends Activity {
     private Button filterButton;
+    private SelectionView initialView;
+    private final int INVERT_FILTER = 1;
+    private final int SEPIA_FILTER = 2;
+    private final int SNOW_FILTER = 3;
+    private final int GRAYSCALE_FILTER = 4;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -27,7 +33,13 @@ public class SelectionActivity extends Activity {
         }
 
         // Use a custom view for the image.
-        SelectionView initialView = new SelectionView(this, fileUri);
+        initialView = new SelectionView(this, fileUri, 0);
+        setContentView(initialView);
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
         setContentView(initialView);
     }
 
@@ -41,14 +53,17 @@ public class SelectionActivity extends Activity {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
-            case R.id.filterOne:
-                Toast.makeText(SelectionActivity.this, R.string.filter_one, Toast.LENGTH_LONG).show();
+            case R.id.invertFilter:
+                initialView.applyFilter(INVERT_FILTER);
                 break;
-            case R.id.filterTwo:
-                Toast.makeText(SelectionActivity.this, R.string.filter_two, Toast.LENGTH_LONG).show();
+            case R.id.sepiaFilter:
+                initialView.applyFilter(SEPIA_FILTER);
                 break;
-            case R.id.filterThree:
-                Toast.makeText(SelectionActivity.this, R.string.filter_three, Toast.LENGTH_LONG).show();
+            case R.id.snowFilter:
+                initialView.applyFilter(SNOW_FILTER);
+                break;
+            case R.id.grayscaleFilter:
+                initialView.applyFilter(GRAYSCALE_FILTER);
                 break;
             default:
                 return super.onOptionsItemSelected(item);
