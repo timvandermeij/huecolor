@@ -118,7 +118,7 @@ public class SelectionView extends View {
         {0, -1, 0}
     };
 
-    // Edge detection
+    // Geometric hashing
     private final static int BLOCK_SIZE = 10;
     private PointsList[][] edgePointBuckets = null;
     private int bucketHeight = 0;
@@ -127,20 +127,20 @@ public class SelectionView extends View {
         {-1,-1}, {0,-1}, {1, -1}, {1, 0}, {1, 1}, {0, 1}, {-1, 1}, {-1, 0}
     };
 
-    // Path adjustment
+    // Path adjustment multithreading
     private Handler handler = new Handler();
     private Thread adjustPathThread = null;
     private boolean adjustDone = false;
 
     // Filters
-    Filters filters;
-    private final int INVERT_FILTER = 1;
-    private final int SEPIA_FILTER = 2;
-    private final int SNOW_FILTER = 3;
-    private final int GRAYSCALE_FILTER = 4;
+    private Filters filters;
+    public final static int INVERT_FILTER = 1;
+    public final static int SEPIA_FILTER = 2;
+    public final static int SNOW_FILTER = 3;
+    public final static int GRAYSCALE_FILTER = 4;
 
     public SelectionView(Context context) {
-        this(context, null, 0);
+        this(context, null, GRAYSCALE_FILTER);
     }
 
     public SelectionView(Context context, Uri fileUri, int filterOption) {

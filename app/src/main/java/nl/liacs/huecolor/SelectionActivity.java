@@ -8,18 +8,12 @@ import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
-import android.widget.Button;
 
 /**
  * Based on https://code.google.com/p/apidemos/source/browse/trunk/ApiDemos/src/com/example/android/apis/graphics/FingerPaint.java
  */
 public class SelectionActivity extends Activity {
-    private Button filterButton;
     private SelectionView initialView;
-    private final int INVERT_FILTER = 1;
-    private final int SEPIA_FILTER = 2;
-    private final int SNOW_FILTER = 3;
-    private final int GRAYSCALE_FILTER = 4;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,7 +27,7 @@ public class SelectionActivity extends Activity {
         }
 
         // Use a custom view for the image.
-        initialView = new SelectionView(this, fileUri, 0);
+        initialView = new SelectionView(this, fileUri, SelectionView.GRAYSCALE_FILTER);
         setContentView(initialView);
     }
 
@@ -54,16 +48,16 @@ public class SelectionActivity extends Activity {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.invertFilter:
-                initialView.applyFilter(INVERT_FILTER);
+                initialView.applyFilter(SelectionView.INVERT_FILTER);
                 break;
             case R.id.sepiaFilter:
-                initialView.applyFilter(SEPIA_FILTER);
+                initialView.applyFilter(SelectionView.SEPIA_FILTER);
                 break;
             case R.id.snowFilter:
-                initialView.applyFilter(SNOW_FILTER);
+                initialView.applyFilter(SelectionView.SNOW_FILTER);
                 break;
             case R.id.grayscaleFilter:
-                initialView.applyFilter(GRAYSCALE_FILTER);
+                initialView.applyFilter(SelectionView.GRAYSCALE_FILTER);
                 break;
             default:
                 return super.onOptionsItemSelected(item);
