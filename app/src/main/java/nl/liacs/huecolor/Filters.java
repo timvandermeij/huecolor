@@ -10,6 +10,8 @@ import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
 import android.graphics.Shader;
 
+import java.util.Random;
+
 /**
  * Based on https://github.com/kpbird/Android-Image-Filters/blob/master/ImageEffect/src/main/java/com/kpbird/imageeffect/ImageFilters.java
  */
@@ -99,5 +101,34 @@ public class Filters {
         secondPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.DST_IN));
         canvas.drawRect(0, originalHeight, originalWidth, reflected.getHeight() + gap, secondPaint);
         return reflected;
+    }
+
+    public Bitmap snowFilter(Bitmap original) {
+        // Some initializations
+        int originalWidth = original.getWidth(), originalHeight = original.getHeight();
+        int[] pixels = new int[originalWidth * originalHeight];
+        int red, green, blue, index = 0, threshold = 50;
+        // Create an output Bitmap with the settings of the original
+        Bitmap snowApplied = Bitmap.createBitmap(originalWidth, originalHeight, Bitmap.Config.RGB_565);
+        // Get the pixel array of the original bitmap.
+        original.getPixels(pixels, 0, originalWidth, 0, 0, originalWidth, originalHeight);
+        // Commence randomness.
+        Random random = new Random();
+        // Scan through the original Bitmap
+        for(int i = 0; i < originalWidth; i++) {
+            for(int j = 0; j < originalHeight; j++) {
+                // Get current index in the 2D-matrix.
+                index = i + originalWidth * j;
+                red = Color.red(pixels[index]);
+                green = Color.green(pixels[index]);
+                blue = Color.blue(pixels[index]);
+                threshold = random.nextInt(0xFF);
+                if(red > threshold && green > threshold && blue > threshold) {
+                    pixels[index] = Color.rgb(0xFF, 0xFF, 0xFF);
+                }
+            }
+        }
+        snowApplied.setPixels(pixels, 0, originalWidth, 0, 0, originalWidth, originalHeight);
+        return snowApplied;
     }
 }

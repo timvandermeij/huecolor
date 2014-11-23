@@ -220,6 +220,9 @@ public class SelectionView extends View {
             case 4:
                 alteredBitmap = filters.reflectionFilter(bitmap);
                 break;
+            case 5:
+                alteredBitmap = filters.snowFilter(bitmap);
+                break;
         }
 
     }

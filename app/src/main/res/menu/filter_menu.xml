@@ -7,9 +7,13 @@
         android:id="@+id/sepiaFilter"
         android:title="@string/sepiaFilter"/>
     <item
-        android:id="@+id/grayscaleFilter"
-        android:title="@string/grayscaleFilter"/>
+        android:id="@+id/snowFilter"
+        android:title="@string/snowFilter"/>
     <!--<item
         android:id="@+id/reflectionFilter"
         android:title="@string/reflectionFilter"/>-->
+    <!-- This one should always be last -->
+    <item
+        android:id="@+id/grayscaleFilter"
+        android:title="@string/grayscaleFilter"/>
 </menu>
