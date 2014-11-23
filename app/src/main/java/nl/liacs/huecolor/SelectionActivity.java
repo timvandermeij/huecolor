@@ -2,16 +2,12 @@ package nl.liacs.huecolor;
 
 import android.app.Activity;
 import android.content.Intent;
-import android.content.res.Configuration;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 
-/**
- * Based on https://code.google.com/p/apidemos/source/browse/trunk/ApiDemos/src/com/example/android/apis/graphics/FingerPaint.java
- */
 public class SelectionActivity extends Activity {
     private SelectionView initialView;
 
