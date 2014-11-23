@@ -200,16 +200,16 @@ public class SelectionView extends View {
         switch(filterOption) {
             case 0:
             case 3:
-                alteredBitmap = filters.grayScaleFilter();
+                alteredBitmap = filters.grayscale();
                 break;
             case 1:
-                alteredBitmap = filters.invertFilter();
+                alteredBitmap = filters.invert();
                 break;
             case 2:
-                alteredBitmap = filters.sepiaFilter();
+                alteredBitmap = filters.sepia();
                 break;
             case 4:
-                alteredBitmap = filters.snowFilter();
+                alteredBitmap = filters.snow();
                 break;
         }
         invalidate();

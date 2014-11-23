@@ -19,7 +19,7 @@ public class Filters {
         sourceHeight = bitmap.getHeight();
     }
 
-    public Bitmap invertFilter() {
+    public Bitmap invert() {
         // Create an output Bitmap with the settings of the original
         Bitmap inverted = Bitmap.createBitmap(sourceWidth, sourceHeight, sourceBitmap.getConfig());
         // Some variables which will serve temporarily later on
@@ -38,7 +38,7 @@ public class Filters {
         return inverted;
     }
 
-    public Bitmap grayScaleFilter() {
+    public Bitmap grayscale() {
         // Create an output Bitmap with the settings of the original
         Bitmap grayScaled = Bitmap.createBitmap(sourceWidth, sourceHeight, Bitmap.Config.ARGB_8888);
         int alpha, red, green, blue, pixel;
@@ -55,7 +55,7 @@ public class Filters {
         return grayScaled;
     }
 
-    public Bitmap sepiaFilter() {
+    public Bitmap sepia() {
         // Create an output Bitmap with the settings of the original
         Bitmap sepiaApplied = Bitmap.createBitmap(sourceWidth, sourceHeight, Bitmap.Config.ARGB_8888);
         int alpha, red, green, blue, pixel;
@@ -78,7 +78,7 @@ public class Filters {
         return sepiaApplied;
     }
 
-    public Bitmap snowFilter() {
+    public Bitmap snow() {
         int[] pixels = new int[sourceWidth * sourceHeight];
         int red, green, blue, index = 0, threshold = 50;
         // Create an output Bitmap with the settings of the original
