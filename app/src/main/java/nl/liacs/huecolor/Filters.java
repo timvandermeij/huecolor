@@ -42,20 +42,26 @@ public class Filters {
     }
 
     public Bitmap grayscale() {
-        // Create an output Bitmap with the settings of the original
-        Bitmap grayScaled = Bitmap.createBitmap(sourceWidth, sourceHeight, Bitmap.Config.ARGB_8888);
-        int alpha, red, green, blue, pixel;
-        // Scan through the original Bitmap
+        int[] pixels = new int[sourceWidth * sourceHeight];
+        int red, green, blue, pixel;
+        Bitmap grayscaled = Bitmap.createBitmap(sourceWidth, sourceHeight, sourceBitmap.getConfig());
+
+        // Get the pixel array of the original bitmap.
+        sourceBitmap.getPixels(pixels, 0, sourceWidth, 0, 0, sourceWidth, sourceHeight);
+
+        // Apply the invert effect.
         for(int i = 0; i < sourceWidth; i++) {
             for(int j = 0; j < sourceHeight; j++) {
-                pixel = sourceBitmap.getPixel(i,j);
-                alpha = Color.alpha(pixel);
-                // Apply grayscale
-                red = green = blue = (int) (0.299 * Color.red(pixel) + 0.587 * Color.green(pixel) + 0.114 * Color.blue(pixel));
-                grayScaled.setPixel(i, j, Color.argb(alpha, red, green, blue));
+                pixel = pixels[i + sourceWidth * j];
+                red = (pixel >> 16) & 0xFF; // Red component
+                green = (pixel >> 8) & 0xFF; // Green component
+                blue = pixel & 0xFF; // Blue component
+                red = green = blue = (int) (0.299 * red + 0.587 * green + 0.114 * blue);
+                pixels[i + sourceWidth * j] = Color.argb(pixel >>> 24, red, green, blue);
             }
         }
-        return grayScaled;
+        grayscaled.setPixels(pixels, 0, sourceWidth, 0, 0, sourceWidth, sourceHeight);
+        return grayscaled;
     }
 
     public Bitmap sepia() {
