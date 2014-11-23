@@ -213,7 +213,6 @@ public class SelectionView extends View {
                 break;
         }
         invalidate();
-
     }
 
     @Override

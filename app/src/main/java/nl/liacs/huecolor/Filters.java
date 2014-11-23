@@ -20,21 +20,24 @@ public class Filters {
     }
 
     public Bitmap invert() {
-        // Create an output Bitmap with the settings of the original
+        int[] pixels = new int[sourceWidth * sourceHeight];
+        int red, green, blue, pixel;
         Bitmap inverted = Bitmap.createBitmap(sourceWidth, sourceHeight, sourceBitmap.getConfig());
-        // Some variables which will serve temporarily later on
-        int alpha, red, green, blue, pixel;
-        // Scan through the original Bitmap
+
+        // Get the pixel array of the original bitmap.
+        sourceBitmap.getPixels(pixels, 0, sourceWidth, 0, 0, sourceWidth, sourceHeight);
+
+        // Apply the invert effect.
         for(int i = 0; i < sourceWidth; i++) {
             for(int j = 0; j < sourceHeight; j++) {
-                pixel = sourceBitmap.getPixel(i,j);
-                alpha = Color.alpha(pixel);
-                red = 255 - Color.red(pixel);
-                green = 255 - Color.green(pixel);
-                blue = 255 - Color.blue(pixel);
-                inverted.setPixel(i, j, Color.argb(alpha, red, green, blue));
+                pixel = pixels[i + sourceWidth * j];
+                red = 255 - (pixel >> 16) & 0xFF; // Red component
+                green = 255 - (pixel >> 8) & 0xFF; // Green component
+                blue = 255 - pixel & 0xFF; // Blue component
+                pixels[i + sourceWidth * j] = Color.argb(pixel >>> 24, red, green, blue);
             }
         }
+        inverted.setPixels(pixels, 0, sourceWidth, 0, 0, sourceWidth, sourceHeight);
         return inverted;
     }
 
