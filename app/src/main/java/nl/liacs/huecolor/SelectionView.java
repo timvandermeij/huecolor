@@ -57,6 +57,10 @@ public class SelectionView extends View {
             points.add(point);
         }
 
+        public boolean isEmpty() {
+            return points.isEmpty();
+        }
+
         public PointF get(int index) {
             return points.get(index);
         }
@@ -228,8 +232,14 @@ public class SelectionView extends View {
     protected void onSizeChanged(int w, int h, int oldWidth, int oldHeight) {
         super.onSizeChanged(w, h, oldWidth, oldHeight);
 
+        int oldBitmapWidth = bitmap.getWidth();
+        int oldBitmapHeight = bitmap.getHeight();
+
         // Scale the bitmap to prevent memory issues during edge detection and to make it fit on the screen.
         bitmap = scaleToView(bitmap);
+
+        int bitmapWidth = bitmap.getWidth();
+        int bitmapHeight = bitmap.getHeight();
 
         // Scale the image to the device by specifying its density.
         DisplayMetrics metrics = getResources().getDisplayMetrics();
@@ -254,6 +264,29 @@ public class SelectionView extends View {
 
         // Define the canvas and line path.
         canvas = new Canvas(bitmap.copy(Bitmap.Config.ARGB_8888, true));
+
+        // Move the path to the correct location
+        path.reset();
+        if (pointsList != null && !pointsList.isEmpty()) {
+            float ratioX = (float)bitmapWidth / (float)oldBitmapWidth;
+            float ratioY = (float)bitmapHeight / (float)oldBitmapHeight;
+            int pointListSize = pointsList.size();
+
+            PointF first = pointsList.get(0);
+            first.x *= ratioX;
+            first.y *= ratioY;
+            path.moveTo(first.x + canvasLeft, first.y + canvasTop);
+
+            PointF prev = first;
+            for (int i = 1; i < pointListSize; i++) {
+                PointF point = pointsList.get(i);
+                point.x *= ratioX;
+                point.y *= ratioY;
+                addPathSegment(prev.x + canvasLeft, prev.y + canvasTop, point.x + canvasLeft, point.y + canvasTop);
+                prev = point;
+            }
+            path.lineTo(first.x + canvasLeft, first.y + canvasTop);
+        }
 
         // Start edge detection as a background process.
         startEdgeDetection();
@@ -340,6 +373,10 @@ public class SelectionView extends View {
         }
     }
 
+    private void addPathSegment(float x1, float y1, float x2, float y2) {
+        path.quadTo(x1, y1, (x2 + x1) / 2, (y2 + y1) / 2);
+    }
+
     private void touchStart(float x, float y) {
         // Start a new path when the user taps on the screen.
         // Clear any old path from the canvas.
@@ -363,7 +400,7 @@ public class SelectionView extends View {
         float dy = Math.abs(y - startY);
 
         if (dx >= TOUCH_TOLERANCE || dy >= TOUCH_TOLERANCE) {
-            path.quadTo(startX, startY, (x + startX) / 2, (y + startY) / 2);
+            addPathSegment(startX, startY, x, y);
             pointsList.add(new PointF(x - canvasLeft, y - canvasTop));
             startX = x;
             startY = y;
@@ -546,7 +583,7 @@ public class SelectionView extends View {
             // Draw the rest of the points of the new path.
             for (int k = 1; k < pointListSize; k++) {
                 point = pointsList.get(k);
-                path.quadTo(x, y, (point.x + canvasLeft + x) / 2, (point.y + canvasTop + y) / 2);
+                addPathSegment(x, y, point.x + canvasLeft, point.y + canvasTop);
                 x = point.x + canvasLeft;
                 y = point.y + canvasTop;
             }
