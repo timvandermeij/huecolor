@@ -22,7 +22,7 @@ public class Filters {
     public Bitmap invert() {
         int[] pixels = new int[sourceWidth * sourceHeight];
         int red, green, blue, pixel;
-        Bitmap inverted = Bitmap.createBitmap(sourceWidth, sourceHeight, sourceBitmap.getConfig());
+        Bitmap target = Bitmap.createBitmap(sourceWidth, sourceHeight, sourceBitmap.getConfig());
 
         // Get the pixel array of the original bitmap.
         sourceBitmap.getPixels(pixels, 0, sourceWidth, 0, 0, sourceWidth, sourceHeight);
@@ -37,19 +37,19 @@ public class Filters {
                 pixels[i + sourceWidth * j] = Color.argb(pixel >>> 24, red, green, blue);
             }
         }
-        inverted.setPixels(pixels, 0, sourceWidth, 0, 0, sourceWidth, sourceHeight);
-        return inverted;
+        target.setPixels(pixels, 0, sourceWidth, 0, 0, sourceWidth, sourceHeight);
+        return target;
     }
 
     public Bitmap grayscale() {
         int[] pixels = new int[sourceWidth * sourceHeight];
         int red, green, blue, pixel;
-        Bitmap grayscaled = Bitmap.createBitmap(sourceWidth, sourceHeight, sourceBitmap.getConfig());
+        Bitmap target = Bitmap.createBitmap(sourceWidth, sourceHeight, sourceBitmap.getConfig());
 
         // Get the pixel array of the original bitmap.
         sourceBitmap.getPixels(pixels, 0, sourceWidth, 0, 0, sourceWidth, sourceHeight);
 
-        // Apply the invert effect.
+        // Apply the grayscale effect.
         for(int i = 0; i < sourceWidth; i++) {
             for(int j = 0; j < sourceHeight; j++) {
                 pixel = pixels[i + sourceWidth * j];
@@ -60,31 +60,41 @@ public class Filters {
                 pixels[i + sourceWidth * j] = Color.argb(pixel >>> 24, red, green, blue);
             }
         }
-        grayscaled.setPixels(pixels, 0, sourceWidth, 0, 0, sourceWidth, sourceHeight);
-        return grayscaled;
+        target.setPixels(pixels, 0, sourceWidth, 0, 0, sourceWidth, sourceHeight);
+        return target;
     }
 
     public Bitmap sepia() {
-        // Create an output Bitmap with the settings of the original
-        Bitmap sepiaApplied = Bitmap.createBitmap(sourceWidth, sourceHeight, Bitmap.Config.ARGB_8888);
-        int alpha, red, green, blue, pixel;
+        int[] pixels = new int[sourceWidth * sourceHeight];
+        int red, green, blue, pixel;
+        Bitmap target = Bitmap.createBitmap(sourceWidth, sourceHeight, sourceBitmap.getConfig());
+
+        // Get the pixel array of the original bitmap.
+        sourceBitmap.getPixels(pixels, 0, sourceWidth, 0, 0, sourceWidth, sourceHeight);
+
+        // Apply the sepia effect.
         for(int i = 0; i < sourceWidth; i++) {
             for(int j = 0; j < sourceHeight; j++) {
-                pixel = sourceBitmap.getPixel(i,j);
-                alpha = Color.alpha(pixel);
-                // Apply grayscale
-                red = green = blue = (int) (0.299 * Color.red(pixel) + 0.587 * Color.green(pixel) + 0.114 * Color.blue(pixel));
-                // Apply the sepia effect
+                pixel = pixels[i + sourceWidth * j];
+                red = (pixel >> 16) & 0xFF; // Red component
+                green = (pixel >> 8) & 0xFF; // Green component
+                blue = pixel & 0xFF; // Blue component
+
+                // Grayscale
+                red = green = blue = (int) (0.299 * red + 0.587 * green + 0.114 * blue);
+
+                // Sepia
                 red += 15;
                 green += 6;
                 blue += 1;
-                if (red > 255) {red = 255;}
-                if (green > 255) {green = 255;}
-                if (blue > 255) {blue = 255;}
-                sepiaApplied.setPixel(i, j, Color.argb(alpha, red, green, blue));
+                red = (red < 0 ? 0 : (red > 255 ? 255 : red));
+                green = (green < 0 ? 0 : (green > 255 ? 255 : green));
+                blue = (blue < 0 ? 0 : (blue > 255 ? 255 : blue));
+                pixels[i + sourceWidth * j] = Color.argb(pixel >>> 24, red, green, blue);
             }
         }
-        return sepiaApplied;
+        target.setPixels(pixels, 0, sourceWidth, 0, 0, sourceWidth, sourceHeight);
+        return target;
     }
 
     public Bitmap snow() {
