@@ -50,11 +50,8 @@ public class SelectionActivity extends Activity {
             case R.id.grayscaleFilter:
                 initialView.applyFilter(3);
                 break;
-            /*case R.id.reflectionFilter:
-                initialView.applyFilter(4);
-                break;*/
             case R.id.snowFilter:
-                initialView.applyFilter(5);
+                initialView.applyFilter(4);
                 break;
             default:
                 return super.onOptionsItemSelected(item);

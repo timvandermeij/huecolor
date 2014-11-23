@@ -218,9 +218,6 @@ public class SelectionView extends View {
                 alteredBitmap = filters.sepiaFilter(bitmap);
                 break;
             case 4:
-                alteredBitmap = filters.reflectionFilter(bitmap);
-                break;
-            case 5:
                 alteredBitmap = filters.snowFilter(bitmap);
                 break;
         }

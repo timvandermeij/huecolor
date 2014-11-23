@@ -2,18 +2,14 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
         android:id="@+id/invertFilter"
-        android:title="@string/invertFilter"/>
+        android:title="@string/invertFilter" />
     <item
         android:id="@+id/sepiaFilter"
-        android:title="@string/sepiaFilter"/>
+        android:title="@string/sepiaFilter" />
     <item
         android:id="@+id/snowFilter"
-        android:title="@string/snowFilter"/>
-    <!--<item
-        android:id="@+id/reflectionFilter"
-        android:title="@string/reflectionFilter"/>-->
-    <!-- This one should always be last -->
+        android:title="@string/snowFilter" />
     <item
         android:id="@+id/grayscaleFilter"
-        android:title="@string/grayscaleFilter"/>
+        android:title="@string/grayscaleFilter" />
 </menu>
