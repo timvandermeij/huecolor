@@ -127,7 +127,7 @@ public class SelectionView extends View {
     private boolean detectDone = false;
 
     // Geometrical hashing for edge detection and path adjustment
-    private final static int BLOCK_SIZE = 10;
+    private final static int BLOCK_SIZE = 40;
     private PointsList[][] edgePointBuckets = null;
     private int bucketHeight = 0;
     private int bucketWidth = 0;
