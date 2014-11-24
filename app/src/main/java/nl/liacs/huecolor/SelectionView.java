@@ -113,6 +113,7 @@ public class SelectionView extends View {
     private float startX, startY; // Used for calculating new point of line
     private static final float TOUCH_TOLERANCE = 4; // Defines how quickly we should draw a line
     private PointsList pointsList = new PointsList(); // List of points in the path
+    private boolean drawDone = false;
 
     // Edge detection constants
     private final static int KERNEL_WIDTH = 3;
@@ -123,6 +124,7 @@ public class SelectionView extends View {
         {-1, 4, -1},
         {0, -1, 0}
     };
+    private boolean detectDone = false;
 
     // Geometrical hashing for edge detection and path adjustment
     private final static int BLOCK_SIZE = 10;
@@ -288,6 +290,7 @@ public class SelectionView extends View {
                 prev = point;
             }
             path.lineTo(first.x + canvasLeft, first.y + canvasTop);
+            drawDone = true;
         }
 
         // Start edge detection as a background process.
@@ -407,6 +410,7 @@ public class SelectionView extends View {
             adjustPathThread = null;
         }
         adjustDone = false;
+        drawDone = false;
         path.reset();
         path.moveTo(x, y);
         pointsList = new PointsList();
@@ -434,6 +438,7 @@ public class SelectionView extends View {
         // Adjust the path using the edge detection data afterward.
         path.lineTo(touchStartX, touchStartY);
         canvas.drawPath(path, paint);
+        drawDone = true;
         startAdjustPath();
     }
 
@@ -467,6 +472,15 @@ public class SelectionView extends View {
             @Override
             public void run() {
                 detectEdges(kernel);
+                handler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        // Make sure path is adjusted if it was rotated during draw
+                        if (drawDone) {
+                            startAdjustPath();
+                        }
+                    }
+                });
             }
         };
         new Thread(runnable).start();
@@ -522,9 +536,14 @@ public class SelectionView extends View {
             }
         }
         sourcePixels = null; // Free memory directly instead of relying on GC.
+        detectDone = true;
     }
 
     private void startAdjustPath() {
+        // Don't perform path adjustment if it would not have any effect.
+        if (!detectDone || adjustDone) {
+            return;
+        }
         // Run path adjust using edge detection as a background process.
         Runnable runnable = new Runnable() {
             @Override
