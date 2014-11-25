@@ -16,7 +16,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.ParcelFileDescriptor;
 import android.util.DisplayMetrics;
-import android.util.Log;
 import android.util.TypedValue;
 import android.view.MotionEvent;
 import android.view.View;
@@ -30,14 +29,15 @@ import java.util.ConcurrentModificationException;
  */
 public class SelectionView extends View {
     protected class Distance {
+        public float x;
+        public float y;
+        public float distance;
+
         public Distance(float x, float y, float d) {
             this.x = x;
             this.y = y;
             this.distance = d;
         }
-        public float x;
-        public float y;
-        public float distance;
     }
 
     protected class PointsList {
@@ -112,7 +112,7 @@ public class SelectionView extends View {
     private Path path;
     private float touchStartX, touchStartY; // Used for closing an incomplete path
     private float startX, startY; // Used for calculating new point of line
-    private static final float TOUCH_TOLERANCE = 4; // Defines how quickly we should draw a line
+    private static final float TOUCH_TOLERANCE = 4; // Defines how quickly we should draw a point
     private PointsList pointsList = new PointsList(); // List of points in the path
     private boolean drawDone = false;
 
@@ -128,7 +128,7 @@ public class SelectionView extends View {
     private boolean detectDone = false;
 
     // Geometrical hashing for edge detection and path adjustment
-    private final static int BLOCK_SIZE = 40;
+    private final static int BLOCK_SIZE = 100;
     private PointsList[][] edgePointBuckets = null;
     private int bucketHeight = 0;
     private int bucketWidth = 0;
@@ -200,18 +200,18 @@ public class SelectionView extends View {
                 ParcelFileDescriptor pfd = getContext().getContentResolver().openFileDescriptor(fileUri, "r");
                 FileDescriptor fd = pfd.getFileDescriptor();
 
-
                 // First decode with inJustDecodeBounds=true to check dimensions
                 options.inJustDecodeBounds = true;
                 BitmapFactory.decodeFileDescriptor(fd, null, options);
                 options.inJustDecodeBounds = false;
+
+                // Sample the image while reading for memory constraints. We scale it down correctly later.
                 DisplayMetrics metrics = getResources().getDisplayMetrics();
                 options.inSampleSize = Math.max(options.outHeight / metrics.heightPixels, options.outWidth / metrics.widthPixels);
-                Log.d("HueColor", "Sample size: " + options.inSampleSize);
+
                 pfd = getContext().getContentResolver().openFileDescriptor(fileUri, "r");
                 fd = pfd.getFileDescriptor();
                 bitmap = BitmapFactory.decodeFileDescriptor(fd, null, options);
-                Log.d("HueColor", "Bitmap info: " + bitmap.getHeight() + "/" + bitmap.getWidth() + " " + bitmap.getByteCount() + " " + bitmap.getDensity());
             } catch (Throwable e) {
                 bitmap = null;
                 options.inSampleSize = 1;
@@ -513,6 +513,7 @@ public class SelectionView extends View {
         // Source bitmap pixels
         int[] sourcePixels = new int[bitmapWidth * bitmapHeight];
         bitmap.getPixels(sourcePixels, 0, bitmapWidth, 0, 0, bitmapWidth, bitmapHeight);
+
         bucketWidth = (int)Math.ceil(bitmapWidth / (double)BLOCK_SIZE);
         bucketHeight = (int)Math.ceil(bitmapHeight / (double)BLOCK_SIZE);
         edgePointBuckets = new PointsList[bucketWidth][bucketHeight];
@@ -536,7 +537,7 @@ public class SelectionView extends View {
                 subSumB = (subSumB < 0 ? 0 : (subSumB > 255 ? 255 : subSumB));
 
                 // Keep track of the points that are on edges.
-                if (subSumR > EDGE_THRESHOLD || subSumB > EDGE_THRESHOLD || subSumG > EDGE_THRESHOLD) {
+                if (subSumR > EDGE_THRESHOLD || subSumG > EDGE_THRESHOLD || subSumB > EDGE_THRESHOLD) {
                     PointF p = new PointF(i,j);
                     PointsList bucket = edgePointBuckets[i / BLOCK_SIZE][j / BLOCK_SIZE];
                     if (bucket == null) {
@@ -589,11 +590,7 @@ public class SelectionView extends View {
                 PointsList bucket = edgePointBuckets[i][j];
                 // Check if the point already happens to be on an edge.
                 if (bucket != null) {
-                    if (bucket.has(point)) {
-                        minDistance = new Distance(point.x, point.y, 0.0f);
-                    } else {
-                        bucket.findClosestPoint(point, minDistance);
-                    }
+                    bucket.findClosestPoint(point, minDistance);
                 }
                 if (minDistance.distance > 0.0f) {
                     // Check the neighbors since they might be closer
@@ -602,8 +599,8 @@ public class SelectionView extends View {
                             j + neighbor[1] < 0 || j + neighbor[1] > bucketHeight - 1) {
                             continue;
                         }
-                        float xD = neighbor[0] * (i-minDistance.x) + (neighbor[0] == -1 ? BLOCK_SIZE : 0.0f);
-                        float yD = neighbor[1] * (j-minDistance.y) + (neighbor[1] == -1 ? BLOCK_SIZE : 0.0f);
+                        float xD = neighbor[0] * (i-minDistance.x);
+                        float yD = neighbor[1] * (j-minDistance.y);
                         if (xD * xD + yD * yD < minDistance.distance * minDistance.distance) {
                             // Check neighbor since we're close to it
                             bucket = edgePointBuckets[i + neighbor[0]][j + neighbor[1]];
