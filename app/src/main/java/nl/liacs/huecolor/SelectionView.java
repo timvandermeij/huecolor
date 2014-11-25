@@ -30,25 +30,31 @@ import java.util.ConcurrentModificationException;
  */
 public class SelectionView extends View {
     protected class Distance {
-        public Distance(float x, float y, float d) {
-            this.x = x;
-            this.y = y;
-            this.distance = d;
-        }
         public float x;
         public float y;
         public float distance;
+        public float weight;
+
+        public Distance(float x, float y, float d, float w) {
+            this.x = x;
+            this.y = y;
+            this.distance = d;
+            this.weight = w;
+        }
     }
 
     protected class PointsList {
         private ArrayList<PointF> points;
+        private ArrayList<Float> values;
 
         public PointsList() {
             points = new ArrayList<PointF>();
+            values = new ArrayList<Float>();
         }
 
         public PointsList(ArrayList<PointF> list) {
             points = list;
+            values = null;
         }
 
         public int size() {
@@ -59,12 +65,21 @@ public class SelectionView extends View {
             points.add(point);
         }
 
+        public void add(PointF point, Float value) {
+            points.add(point);
+            values.add(value);
+        }
+
         public boolean isEmpty() {
             return points.isEmpty();
         }
 
         public PointF get(int index) {
             return points.get(index);
+        }
+
+        public Float getValue(int index) {
+            return values.get(index);
         }
 
         public boolean has(PointF point) {
@@ -75,8 +90,13 @@ public class SelectionView extends View {
             return points;
         }
 
+        public ArrayList<Float> getValues() {
+            return values;
+        }
+
         public Distance findClosestPoint(PointF point, Distance minDistance) {
-            float distance, x, y;
+            float distance, weight, x, y;
+            int i = 0;
 
             // Find the edge with the least distance from the point.
             for (PointF edgePoint : points) {
@@ -84,13 +104,16 @@ public class SelectionView extends View {
                 x = edgePoint.x - point.x;
                 y = edgePoint.y - point.y;
                 distance = (float)Math.sqrt(x * x + y * y);
+                weight = values.get(i);
 
                 // Use this edge point if it is closer than any other edge point.
-                if (distance < minDistance.distance) {
+                if (distance * weight < minDistance.distance * minDistance.weight) {
                     minDistance.distance = distance;
+                    minDistance.weight = weight;
                     minDistance.x = edgePoint.x;
                     minDistance.y = edgePoint.y;
                 }
+                i++;
             }
             return minDistance;
         }
@@ -112,14 +135,14 @@ public class SelectionView extends View {
     private Path path;
     private float touchStartX, touchStartY; // Used for closing an incomplete path
     private float startX, startY; // Used for calculating new point of line
-    private static final float TOUCH_TOLERANCE = 4; // Defines how quickly we should draw a line
+    private static final float TOUCH_TOLERANCE = 4; // Defines how quickly we should draw a point
     private PointsList pointsList = new PointsList(); // List of points in the path
     private boolean drawDone = false;
 
     // Edge detection constants
     private final static int KERNEL_WIDTH = 3;
     private final static int KERNEL_HEIGHT = 3;
-    private final static int EDGE_THRESHOLD = 100;
+    private final static int EDGE_THRESHOLD = 200;
     private final static int[][] kernel = {
         {0, -1, 0},
         {-1, 4, -1},
@@ -512,7 +535,9 @@ public class SelectionView extends View {
 
         // Source bitmap pixels
         int[] sourcePixels = new int[bitmapWidth * bitmapHeight];
+        int[] destPixels = new int[bitmapWidth * bitmapHeight];
         bitmap.getPixels(sourcePixels, 0, bitmapWidth, 0, 0, bitmapWidth, bitmapHeight);
+
         bucketWidth = (int)Math.ceil(bitmapWidth / (double)BLOCK_SIZE);
         bucketHeight = (int)Math.ceil(bitmapHeight / (double)BLOCK_SIZE);
         edgePointBuckets = new PointsList[bucketWidth][bucketHeight];
@@ -536,16 +561,25 @@ public class SelectionView extends View {
                 subSumB = (subSumB < 0 ? 0 : (subSumB > 255 ? 255 : subSumB));
 
                 // Keep track of the points that are on edges.
-                if (subSumR > EDGE_THRESHOLD || subSumB > EDGE_THRESHOLD || subSumG > EDGE_THRESHOLD) {
+                if (subSumR + subSumB + subSumG > EDGE_THRESHOLD) {
+                    destPixels[j * bitmapWidth + i] = Color.argb(
+                            Color.alpha(sourcePixels[j * bitmapWidth + i]),
+                            subSumR, subSumG, subSumB
+                    );
+
                     PointF p = new PointF(i,j);
                     PointsList bucket = edgePointBuckets[i / BLOCK_SIZE][j / BLOCK_SIZE];
                     if (bucket == null) {
                         bucket = edgePointBuckets[i / BLOCK_SIZE][j / BLOCK_SIZE] = new PointsList();
                     }
-                    bucket.add(p);
+                    bucket.add(p, (float)(subSumR + subSumB + subSumG));
+                }
+                else {
+                    destPixels[j * bitmapWidth + i] = Color.BLACK;
                 }
             }
         }
+        bitmap.setPixels(destPixels, 0, bitmapWidth, 0, 0, bitmapWidth, bitmapHeight);
         sourcePixels = null; // Free memory directly instead of relying on GC.
         detectDone = true;
     }
@@ -579,7 +613,7 @@ public class SelectionView extends View {
             int pointListSize = pointsList.size();
 
             for (PointF point : pointsList.getPoints()) {
-                Distance minDistance = new Distance(0.0f, 0.0f, Float.POSITIVE_INFINITY);
+                Distance minDistance = new Distance(0.0f, 0.0f, Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY);
                 point.x = (point.x < 0 ? 0 : (point.x > bitmapWidth ? bitmapWidth : point.x));
                 point.y = (point.y < 0 ? 0 : (point.y > bitmapHeight ? bitmapHeight : point.y));
 
@@ -589,11 +623,7 @@ public class SelectionView extends View {
                 PointsList bucket = edgePointBuckets[i][j];
                 // Check if the point already happens to be on an edge.
                 if (bucket != null) {
-                    if (bucket.has(point)) {
-                        minDistance = new Distance(point.x, point.y, 0.0f);
-                    } else {
-                        bucket.findClosestPoint(point, minDistance);
-                    }
+                    bucket.findClosestPoint(point, minDistance);
                 }
                 if (minDistance.distance > 0.0f) {
                     // Check the neighbors since they might be closer
