@@ -28,12 +28,10 @@ public class MainActivity extends Activity {
 
         final String[] content = {
             getString(R.string.take_camera_photo),
-            getString(R.string.browse_photo),
-            getString(R.string.select_object)
-        } ;
+            getString(R.string.browse_photo)
+        };
         final Integer[] icons = {
             R.drawable.ic_camera,
-            R.drawable.ic_browse_photo,
             R.drawable.ic_browse_photo
         };
         IconListView adapter = new IconListView(MainActivity.this, content, icons);
@@ -70,11 +68,6 @@ public class MainActivity extends Activity {
                         if (intent.resolveActivity(getPackageManager()) != null) {
                             startActivityForResult(intent, REQUEST_IMAGE_GET);
                         }
-                        break;
-
-                    case 2: // Object selection
-                        intent = new Intent("nl.liacs.huecolor.select", fileUri, MainActivity.this, SelectionActivity.class);
-                        startActivity(intent);
                         break;
 
                     default:
@@ -121,17 +114,17 @@ public class MainActivity extends Activity {
         if (requestCode == CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE) {
             if (resultCode == RESULT_OK) {
                 // Image captured and saved to file URI specified in the intent
-                Toast.makeText(this, "Image saved to:\n" + fileUri, Toast.LENGTH_LONG).show();
-            } else if (resultCode == RESULT_CANCELED) {
-                // User cancelled the image capture
-                Toast.makeText(this, "Cancelled", Toast.LENGTH_LONG).show();
-            } else {
+                Intent intent = new Intent("nl.liacs.huecolor.select", fileUri, MainActivity.this, SelectionActivity.class);
+                startActivity(intent);
+            } else if (resultCode != RESULT_CANCELED) {
                 // Image capture failed
                 Toast.makeText(this, "Image capture failed", Toast.LENGTH_LONG).show();
             }
         }
         else if (requestCode == REQUEST_IMAGE_GET && resultCode == RESULT_OK) {
             fileUri = data.getData();
+            Intent intent = new Intent("nl.liacs.huecolor.select", fileUri, MainActivity.this, SelectionActivity.class);
+            startActivity(intent);
         }
     }
 }
