@@ -16,7 +16,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.ParcelFileDescriptor;
 import android.util.DisplayMetrics;
-import android.util.Log;
 import android.util.TypedValue;
 import android.view.MotionEvent;
 import android.view.View;
@@ -201,18 +200,18 @@ public class SelectionView extends View {
                 ParcelFileDescriptor pfd = getContext().getContentResolver().openFileDescriptor(fileUri, "r");
                 FileDescriptor fd = pfd.getFileDescriptor();
 
-
                 // First decode with inJustDecodeBounds=true to check dimensions
                 options.inJustDecodeBounds = true;
                 BitmapFactory.decodeFileDescriptor(fd, null, options);
                 options.inJustDecodeBounds = false;
+
+                // Sample the image while reading for memory constraints. We scale it down correctly later.
                 DisplayMetrics metrics = getResources().getDisplayMetrics();
                 options.inSampleSize = Math.max(options.outHeight / metrics.heightPixels, options.outWidth / metrics.widthPixels);
-                Log.d("HueColor", "Sample size: " + options.inSampleSize);
+
                 pfd = getContext().getContentResolver().openFileDescriptor(fileUri, "r");
                 fd = pfd.getFileDescriptor();
                 bitmap = BitmapFactory.decodeFileDescriptor(fd, null, options);
-                Log.d("HueColor", "Bitmap info: " + bitmap.getHeight() + "/" + bitmap.getWidth() + " " + bitmap.getByteCount() + " " + bitmap.getDensity());
             } catch (Throwable e) {
                 bitmap = null;
                 options.inSampleSize = 1;
@@ -513,7 +512,6 @@ public class SelectionView extends View {
 
         // Source bitmap pixels
         int[] sourcePixels = new int[bitmapWidth * bitmapHeight];
-        int[] destPixels = new int[bitmapWidth * bitmapHeight];
         bitmap.getPixels(sourcePixels, 0, bitmapWidth, 0, 0, bitmapWidth, bitmapHeight);
 
         bucketWidth = (int)Math.ceil(bitmapWidth / (double)BLOCK_SIZE);
@@ -540,11 +538,6 @@ public class SelectionView extends View {
 
                 // Keep track of the points that are on edges.
                 if (subSumR > EDGE_THRESHOLD || subSumG > EDGE_THRESHOLD || subSumB > EDGE_THRESHOLD) {
-                    destPixels[j * bitmapWidth + i] = Color.argb(
-                            Color.alpha(sourcePixels[j * bitmapWidth + i]),
-                            subSumR, subSumG, subSumB
-                    );
-
                     PointF p = new PointF(i,j);
                     PointsList bucket = edgePointBuckets[i / BLOCK_SIZE][j / BLOCK_SIZE];
                     if (bucket == null) {
@@ -552,12 +545,8 @@ public class SelectionView extends View {
                     }
                     bucket.add(p);
                 }
-                else {
-                    destPixels[j * bitmapWidth + i] = Color.BLACK;
-                }
             }
         }
-        bitmap.setPixels(destPixels, 0, bitmapWidth, 0, 0, bitmapWidth, bitmapHeight);
         sourcePixels = null; // Free memory directly instead of relying on GC.
         detectDone = true;
     }
