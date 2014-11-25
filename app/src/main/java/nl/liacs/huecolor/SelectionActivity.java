@@ -23,6 +23,14 @@ public class SelectionActivity extends Activity {
         }
 
         // Use a custom view for the image.
+        buildView(fileUri, savedInstanceState);
+    }
+
+    private void buildView(Uri fileUri, Bundle savedInstanceState) {
+        if (savedInstanceState != null && fileUri == null) {
+            String uri = savedInstanceState.getString("fileUri");
+            fileUri = (uri == null ? null : Uri.parse(uri));
+        }
         initialView = new SelectionView(this, fileUri, SelectionView.GRAYSCALE_FILTER);
         if (savedInstanceState != null) {
             initialView.restoreState(savedInstanceState);
@@ -36,6 +44,13 @@ public class SelectionActivity extends Activity {
         initialView.saveState(outState);
     }
 
+
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+        initialView = null;
+        buildView(null, savedInstanceState);
+    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {

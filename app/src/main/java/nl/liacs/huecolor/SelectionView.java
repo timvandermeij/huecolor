@@ -16,6 +16,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.ParcelFileDescriptor;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.util.TypedValue;
 import android.view.MotionEvent;
 import android.view.View;
@@ -198,10 +199,23 @@ public class SelectionView extends View {
             try {
                 ParcelFileDescriptor pfd = getContext().getContentResolver().openFileDescriptor(fileUri, "r");
                 FileDescriptor fd = pfd.getFileDescriptor();
-                bitmap = BitmapFactory.decodeFileDescriptor(fd, null, options);
 
+
+                // First decode with inJustDecodeBounds=true to check dimensions
+                options.inJustDecodeBounds = true;
+                BitmapFactory.decodeFileDescriptor(fd, null, options);
+                options.inJustDecodeBounds = false;
+                DisplayMetrics metrics = getResources().getDisplayMetrics();
+                options.inSampleSize = Math.max(options.outHeight / metrics.heightPixels, options.outWidth / metrics.widthPixels);
+                Log.d("HueColor", "Sample size: " + options.inSampleSize);
+                pfd = getContext().getContentResolver().openFileDescriptor(fileUri, "r");
+                fd = pfd.getFileDescriptor();
+                bitmap = BitmapFactory.decodeFileDescriptor(fd, null, options);
+                Log.d("HueColor", "Bitmap info: " + bitmap.getHeight() + "/" + bitmap.getWidth() + " " + bitmap.getByteCount() + " " + bitmap.getDensity());
             } catch (Throwable e) {
                 bitmap = null;
+                options.inSampleSize = 1;
+                options.inJustDecodeBounds = false;
             }
         }
         if (bitmap == null) {
@@ -251,9 +265,6 @@ public class SelectionView extends View {
 
         // Reinitialize the filters
         filters = new Filters(bitmap);
-
-        // Copy the original bitmap into the altered Bitmap.
-        alteredBitmap = Bitmap.createBitmap(bitmap);
 
         // Convert the image with the desired filter.
         applyFilter(currentFilter);
