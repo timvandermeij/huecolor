@@ -33,28 +33,23 @@ public class SelectionView extends View {
         public float x;
         public float y;
         public float distance;
-        public float weight;
 
-        public Distance(float x, float y, float d, float w) {
+        public Distance(float x, float y, float d) {
             this.x = x;
             this.y = y;
             this.distance = d;
-            this.weight = w;
         }
     }
 
     protected class PointsList {
         private ArrayList<PointF> points;
-        private ArrayList<Float> values;
 
         public PointsList() {
             points = new ArrayList<PointF>();
-            values = new ArrayList<Float>();
         }
 
         public PointsList(ArrayList<PointF> list) {
             points = list;
-            values = null;
         }
 
         public int size() {
@@ -65,21 +60,12 @@ public class SelectionView extends View {
             points.add(point);
         }
 
-        public void add(PointF point, Float value) {
-            points.add(point);
-            values.add(value);
-        }
-
         public boolean isEmpty() {
             return points.isEmpty();
         }
 
         public PointF get(int index) {
             return points.get(index);
-        }
-
-        public Float getValue(int index) {
-            return values.get(index);
         }
 
         public boolean has(PointF point) {
@@ -90,13 +76,8 @@ public class SelectionView extends View {
             return points;
         }
 
-        public ArrayList<Float> getValues() {
-            return values;
-        }
-
         public Distance findClosestPoint(PointF point, Distance minDistance) {
-            float distance, weight, x, y;
-            int i = 0;
+            float distance, x, y;
 
             // Find the edge with the least distance from the point.
             for (PointF edgePoint : points) {
@@ -104,16 +85,13 @@ public class SelectionView extends View {
                 x = edgePoint.x - point.x;
                 y = edgePoint.y - point.y;
                 distance = (float)Math.sqrt(x * x + y * y);
-                weight = values.get(i);
 
                 // Use this edge point if it is closer than any other edge point.
-                if (distance * weight < minDistance.distance * minDistance.weight) {
+                if (distance < minDistance.distance) {
                     minDistance.distance = distance;
-                    minDistance.weight = weight;
                     minDistance.x = edgePoint.x;
                     minDistance.y = edgePoint.y;
                 }
-                i++;
             }
             return minDistance;
         }
@@ -142,7 +120,7 @@ public class SelectionView extends View {
     // Edge detection constants
     private final static int KERNEL_WIDTH = 3;
     private final static int KERNEL_HEIGHT = 3;
-    private final static int EDGE_THRESHOLD = 200;
+    private final static int EDGE_THRESHOLD = 100;
     private final static int[][] kernel = {
         {0, -1, 0},
         {-1, 4, -1},
@@ -151,7 +129,7 @@ public class SelectionView extends View {
     private boolean detectDone = false;
 
     // Geometrical hashing for edge detection and path adjustment
-    private final static int BLOCK_SIZE = 40;
+    private final static int BLOCK_SIZE = 100;
     private PointsList[][] edgePointBuckets = null;
     private int bucketHeight = 0;
     private int bucketWidth = 0;
@@ -561,7 +539,7 @@ public class SelectionView extends View {
                 subSumB = (subSumB < 0 ? 0 : (subSumB > 255 ? 255 : subSumB));
 
                 // Keep track of the points that are on edges.
-                if (subSumR + subSumB + subSumG > EDGE_THRESHOLD) {
+                if (subSumR > EDGE_THRESHOLD || subSumG > EDGE_THRESHOLD || subSumB > EDGE_THRESHOLD) {
                     destPixels[j * bitmapWidth + i] = Color.argb(
                             Color.alpha(sourcePixels[j * bitmapWidth + i]),
                             subSumR, subSumG, subSumB
@@ -572,7 +550,7 @@ public class SelectionView extends View {
                     if (bucket == null) {
                         bucket = edgePointBuckets[i / BLOCK_SIZE][j / BLOCK_SIZE] = new PointsList();
                     }
-                    bucket.add(p, (float)(subSumR + subSumB + subSumG));
+                    bucket.add(p);
                 }
                 else {
                     destPixels[j * bitmapWidth + i] = Color.BLACK;
@@ -613,7 +591,7 @@ public class SelectionView extends View {
             int pointListSize = pointsList.size();
 
             for (PointF point : pointsList.getPoints()) {
-                Distance minDistance = new Distance(0.0f, 0.0f, Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY);
+                Distance minDistance = new Distance(0.0f, 0.0f, Float.POSITIVE_INFINITY);
                 point.x = (point.x < 0 ? 0 : (point.x > bitmapWidth ? bitmapWidth : point.x));
                 point.y = (point.y < 0 ? 0 : (point.y > bitmapHeight ? bitmapHeight : point.y));
 
@@ -632,8 +610,8 @@ public class SelectionView extends View {
                             j + neighbor[1] < 0 || j + neighbor[1] > bucketHeight - 1) {
                             continue;
                         }
-                        float xD = neighbor[0] * (i-minDistance.x) + (neighbor[0] == -1 ? BLOCK_SIZE : 0.0f);
-                        float yD = neighbor[1] * (j-minDistance.y) + (neighbor[1] == -1 ? BLOCK_SIZE : 0.0f);
+                        float xD = neighbor[0] * (i-minDistance.x);
+                        float yD = neighbor[1] * (j-minDistance.y);
                         if (xD * xD + yD * yD < minDistance.distance * minDistance.distance) {
                             // Check neighbor since we're close to it
                             bucket = edgePointBuckets[i + neighbor[0]][j + neighbor[1]];
