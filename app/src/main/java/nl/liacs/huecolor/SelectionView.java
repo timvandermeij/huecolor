@@ -375,8 +375,8 @@ public class SelectionView extends View {
         loadImage();
     }
 
+    /* Move the path to the correct location according to changed bitmap size and canvas locations. */
     private void movePath(int oldBitmapWidth, int oldBitmapHeight) {
-        // Move the path to the correct location
         path.reset();
         if (pointsList != null && !pointsList.isEmpty()) {
             float ratioX = (float)bitmapWidth / (float)oldBitmapWidth;
@@ -419,17 +419,25 @@ public class SelectionView extends View {
         }
     }
 
+    /* Save the altered bitmap to a file */
     protected void saveCanvas(File file) {
         Bitmap diskBitmap = alteredBitmap.copy(Bitmap.Config.ARGB_8888, true);
         Canvas canvas = new Canvas(diskBitmap);
+        // Set a bunch of canvas-specific variables to default, since we only draw the bitmap,
+        // not the whole view. This is very hacky.
         int left = canvasLeft;
         int top = canvasTop;
         canvasLeft = 0;
         canvasTop = 0;
         movePath(bitmapWidth, bitmapHeight);
+        Shader fillShader = fillPaint.getShader();
+        Matrix m = new Matrix();
+        fillShader.getLocalMatrix(m);
+        fillShader.setLocalMatrix(null);
         drawPath = false;
         performDraw(canvas);
         drawPath = true;
+        fillShader.setLocalMatrix(m);
         canvasLeft = left;
         canvasTop = top;
         movePath(bitmapWidth, bitmapHeight);
