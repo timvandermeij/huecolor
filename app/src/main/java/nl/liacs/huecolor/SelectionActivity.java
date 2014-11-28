@@ -44,6 +44,8 @@ public class SelectionActivity extends BaseActivity {
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         initialView.saveState(outState);
+        initialView.release();
+        initialView = null;
     }
 
     @Override

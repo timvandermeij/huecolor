@@ -447,6 +447,18 @@ public class SelectionView extends View {
         }
     }
 
+    public void release() {
+        bitmap.recycle();
+        bitmap = null;
+        alteredBitmap.recycle();
+        alteredBitmap = null;
+        filters = null;
+        if (adjustPathThread != null) {
+            adjustPathThread.interrupt();
+            adjustPathThread = null;
+        }
+    }
+
     private void addPathSegment(float x1, float y1, float x2, float y2) {
         path.quadTo(x1, y1, (x2 + x1) / 2, (y2 + y1) / 2);
     }
