@@ -1,23 +1,16 @@
 package nl.liacs.huecolor;
 
-import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Environment;
 import android.provider.MediaStore;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.Toast;
 
-import java.io.File;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-
-public class MainActivity extends Activity {
+public class MainActivity extends BaseActivity {
     private static final int CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE = 100;
-    private static final int MEDIA_TYPE_IMAGE = 1;
     private static final int REQUEST_IMAGE_GET = 101;
     private Uri fileUri = null;
 
@@ -77,35 +70,17 @@ public class MainActivity extends Activity {
         });
     }
 
-    /**
-     * Create a file URI for saving an image or video
-     */
-    private Uri getOutputMediaFileUri(int type) {
-        return Uri.fromFile(getOutputMediaFile(type));
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putString("fileUri", (fileUri == null ? null : fileUri.toString()));
     }
 
-    /**
-     * Create a file for saving an image or video
-     */
-    private File getOutputMediaFile(int type) {
-        File mediaStorageDir = new File(Environment.getExternalStoragePublicDirectory(
-                                        Environment.DIRECTORY_PICTURES), "HueColor");
-
-        // Create the storage directory if it does not exist
-        if (!mediaStorageDir.exists()) {
-            if (!mediaStorageDir.mkdirs()) {
-                // Use an internal directory
-                mediaStorageDir = getFilesDir();
-            }
-        }
-
-        // Create a media file name
-        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
-        if (type == MEDIA_TYPE_IMAGE) {
-            return new File(mediaStorageDir.getPath() + File.separator +
-                            "IMG_"+ timeStamp + ".jpg");
-        }
-        return null;
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+        String uri = savedInstanceState.getString("fileUri");
+        fileUri = (uri == null ? null : Uri.parse(uri));
     }
 
     @Override
@@ -114,6 +89,7 @@ public class MainActivity extends Activity {
         if (requestCode == CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE) {
             if (resultCode == RESULT_OK) {
                 // Image captured and saved to file URI specified in the intent
+                addFileUriToGallery(fileUri);
                 Intent intent = new Intent("nl.liacs.huecolor.select", fileUri, MainActivity.this, SelectionActivity.class);
                 startActivity(intent);
             } else if (resultCode != RESULT_CANCELED) {

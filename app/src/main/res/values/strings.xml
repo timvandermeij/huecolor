@@ -8,4 +8,5 @@
     <string name="sepiaFilter">Sepia</string>
     <string name="grayscaleFilter">Grayscale</string>
     <string name="snowFilter">Snow</string>
+    <string name="action_save">Save</string>
 </resources>

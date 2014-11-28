@@ -20,7 +20,10 @@ import android.util.TypedValue;
 import android.view.MotionEvent;
 import android.view.View;
 
+import java.io.File;
 import java.io.FileDescriptor;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.ConcurrentModificationException;
 
@@ -99,7 +102,6 @@ public class SelectionView extends View {
     private Uri fileUri;
 
     // Canvas
-    private Canvas canvas = null;
     private int canvasLeft = 0, canvasTop = 0;
     private Bitmap bitmap = null;
     private int bitmapWidth = 0, bitmapHeight = 0;
@@ -110,6 +112,7 @@ public class SelectionView extends View {
     private Paint paint;
     private Paint fillPaint;
     private Path path;
+    private boolean drawPath = true;
     private float touchStartX, touchStartY; // Used for closing an incomplete path
     private float startX, startY; // Used for calculating new point of line
     private static final float TOUCH_TOLERANCE = 4; // Defines how quickly we should draw a point
@@ -277,32 +280,7 @@ public class SelectionView extends View {
         // Assign the shader to this paint
         fillPaint.setShader(fillShader);
 
-        // Define the canvas and line path.
-        canvas = new Canvas(bitmap.copy(Bitmap.Config.ARGB_8888, true));
-
-        // Move the path to the correct location
-        path.reset();
-        if (pointsList != null && !pointsList.isEmpty()) {
-            float ratioX = (float)bitmapWidth / (float)oldBitmapWidth;
-            float ratioY = (float)bitmapHeight / (float)oldBitmapHeight;
-            int pointListSize = pointsList.size();
-
-            PointF first = pointsList.get(0);
-            first.x *= ratioX;
-            first.y *= ratioY;
-            path.moveTo(first.x + canvasLeft, first.y + canvasTop);
-
-            PointF prev = first;
-            for (int i = 1; i < pointListSize; i++) {
-                PointF point = pointsList.get(i);
-                point.x *= ratioX;
-                point.y *= ratioY;
-                addPathSegment(prev.x + canvasLeft, prev.y + canvasTop, point.x + canvasLeft, point.y + canvasTop);
-                prev = point;
-            }
-            path.lineTo(first.x + canvasLeft, first.y + canvasTop);
-            drawDone = true;
-        }
+        movePath(oldBitmapWidth, oldBitmapHeight);
 
         // Start edge detection as a background process.
         startEdgeDetection();
@@ -397,15 +375,67 @@ public class SelectionView extends View {
         loadImage();
     }
 
+    private void movePath(int oldBitmapWidth, int oldBitmapHeight) {
+        // Move the path to the correct location
+        path.reset();
+        if (pointsList != null && !pointsList.isEmpty()) {
+            float ratioX = (float)bitmapWidth / (float)oldBitmapWidth;
+            float ratioY = (float)bitmapHeight / (float)oldBitmapHeight;
+            int pointListSize = pointsList.size();
+
+            PointF first = pointsList.get(0);
+            first.x *= ratioX;
+            first.y *= ratioY;
+            path.moveTo(first.x + canvasLeft, first.y + canvasTop);
+
+            PointF prev = first;
+            for (int i = 1; i < pointListSize; i++) {
+                PointF point = pointsList.get(i);
+                point.x *= ratioX;
+                point.y *= ratioY;
+                addPathSegment(prev.x + canvasLeft, prev.y + canvasTop, point.x + canvasLeft, point.y + canvasTop);
+                prev = point;
+            }
+            path.lineTo(first.x + canvasLeft, first.y + canvasTop);
+            drawDone = true;
+        }
+    }
+
     @Override
     protected void onDraw(Canvas canvas) {
         // Update the previous path and draw the new path.
+        performDraw(canvas);
+    }
+
+    protected void performDraw(Canvas canvas) {
         if (alteredBitmap != null) {
             canvas.drawBitmap(alteredBitmap, canvasLeft, canvasTop, null);
-            canvas.drawPath(path, paint);
-            if (adjustDone) {
+            if (drawPath) {
+                canvas.drawPath(path, paint);
+            }
+            if (adjustDone || !drawPath) {
                 canvas.drawPath(path, fillPaint);
             }
+        }
+    }
+
+    protected void saveCanvas(File file) {
+        Bitmap diskBitmap = alteredBitmap.copy(Bitmap.Config.ARGB_8888, true);
+        Canvas canvas = new Canvas(diskBitmap);
+        int left = canvasLeft;
+        int top = canvasTop;
+        canvasLeft = 0;
+        canvasTop = 0;
+        movePath(bitmapWidth, bitmapHeight);
+        drawPath = false;
+        performDraw(canvas);
+        drawPath = true;
+        canvasLeft = left;
+        canvasTop = top;
+        movePath(bitmapWidth, bitmapHeight);
+        try {
+            diskBitmap.compress(Bitmap.CompressFormat.JPEG, 100, new FileOutputStream(file));
+        } catch (FileNotFoundException ignored) {
         }
     }
 
@@ -448,7 +478,6 @@ public class SelectionView extends View {
         // Finish drawing the line and connect an unclosed path.
         // Adjust the path using the edge detection data afterward.
         path.lineTo(touchStartX, touchStartY);
-        canvas.drawPath(path, paint);
         drawDone = true;
         startAdjustPath();
     }
