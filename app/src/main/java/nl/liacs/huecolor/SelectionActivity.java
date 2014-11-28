@@ -1,14 +1,16 @@
 package nl.liacs.huecolor;
 
-import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.widget.Toast;
 
-public class SelectionActivity extends Activity {
+import java.io.File;
+
+public class SelectionActivity extends BaseActivity {
     private SelectionView initialView;
 
     @Override
@@ -44,6 +46,12 @@ public class SelectionActivity extends Activity {
         initialView.saveState(outState);
     }
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        initialView.release();
+        initialView = null;
+    }
 
     @Override
     protected void onRestoreInstanceState(Bundle savedInstanceState) {
@@ -62,6 +70,13 @@ public class SelectionActivity extends Activity {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
+            case R.id.action_save:
+                File outputFile = getOutputMediaFile(MEDIA_TYPE_IMAGE);
+                initialView.saveCanvas(outputFile);
+                addFileToGallery(outputFile);
+                Toast.makeText(this, "Image sucessfully saved", Toast.LENGTH_LONG).show();
+                finish();
+                break;
             case R.id.invertFilter:
                 initialView.applyFilter(SelectionView.INVERT_FILTER);
                 break;
