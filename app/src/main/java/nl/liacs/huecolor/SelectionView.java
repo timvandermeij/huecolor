@@ -160,6 +160,13 @@ public class SelectionView extends View {
         this.fileUri = fileUri;
         this.currentFilter = filterOption;
 
+        initializeDraw();
+
+        // Load the image
+        loadImage();
+    }
+
+    public void initializeDraw() {
         path = new Path();
 
         // Define the paint for the selection line.
@@ -184,9 +191,6 @@ public class SelectionView extends View {
         fillPaint.setStyle(Paint.Style.FILL);
         fillPaint.setStrokeJoin(Paint.Join.ROUND);
         fillPaint.setStrokeCap(Paint.Cap.ROUND);
-
-        // Load the image
-        loadImage();
     }
 
     protected void loadImage() {
@@ -253,6 +257,10 @@ public class SelectionView extends View {
     protected void onSizeChanged(int w, int h, int oldWidth, int oldHeight) {
         super.onSizeChanged(w, h, oldWidth, oldHeight);
 
+        initializeScale();
+    }
+
+    public void initializeScale() {
         int oldBitmapWidth = bitmapWidth;
         int oldBitmapHeight = bitmapHeight;
 
@@ -448,10 +456,14 @@ public class SelectionView extends View {
     }
 
     public void release() {
-        bitmap.recycle();
-        bitmap = null;
-        alteredBitmap.recycle();
-        alteredBitmap = null;
+        if (bitmap != null) {
+            bitmap.recycle();
+            bitmap = null;
+        }
+        if (alteredBitmap != null) {
+            alteredBitmap.recycle();
+            alteredBitmap = null;
+        }
         filters = null;
         if (adjustPathThread != null) {
             adjustPathThread.interrupt();
@@ -475,7 +487,7 @@ public class SelectionView extends View {
         path.reset();
         path.moveTo(x, y);
         pointsList = new PointsList();
-        pointsList.add(new PointF(x-canvasLeft,y-canvasTop));
+        pointsList.add(new PointF(x - canvasLeft, y - canvasTop));
         touchStartX = startX = x;
         touchStartY = startY = y;
     }
