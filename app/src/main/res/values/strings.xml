@@ -9,4 +9,6 @@
     <string name="grayscaleFilter">Grayscale</string>
     <string name="snowFilter">Snow</string>
     <string name="action_save">Save</string>
+    <string name="colorizeFilter">Colorize</string>
+    <string name="colorpicker_title">Pick a color</string>
 </resources>

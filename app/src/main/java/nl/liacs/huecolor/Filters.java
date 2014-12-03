@@ -2,6 +2,7 @@ package nl.liacs.huecolor;
 
 import android.graphics.Bitmap;
 import android.graphics.Color;
+import android.util.Log;
 
 import java.util.Random;
 
@@ -17,6 +18,36 @@ public class Filters {
         sourceBitmap = bitmap;
         sourceWidth = bitmap.getWidth();
         sourceHeight = bitmap.getHeight();
+    }
+
+    public Bitmap colorize(int color) {
+        int red = (color >> 16) & 0xFF;
+        int green = (color >> 8) & 0xFF;
+        int blue = color & 0xFF;
+        int[] pixels = new int[sourceWidth * sourceHeight];
+        Bitmap target = Bitmap.createBitmap(sourceWidth, sourceHeight, sourceBitmap.getConfig());
+
+        // Get the pixel array of the original bitmap.
+        sourceBitmap.getPixels(pixels, 0, sourceWidth, 0, 0, sourceWidth, sourceHeight);
+
+        // color information
+        int R, G, B;
+        int pixel;
+        // scan through all pixels
+        for (int i = 0; i < sourceWidth; i++) {
+            for (int j = 0; j < sourceHeight; j++) {
+                // apply filtering on each channel R, G, B
+                pixel = pixels[i + sourceWidth * j];
+                R = (pixel >> 16) & 0xFF; // Red component
+                G = (pixel >> 8) & 0xFF; // Green component
+                B = pixel & 0xFF; // Blue component
+                int v = (int) (0.299 * R + 0.587 * G + 0.114 * B);
+                // set new color pixel to output bitmap
+                pixels[i + sourceWidth * j] = Color.argb(pixel >>> 24, (v + red) / 2, (v + green) / 2, (v + blue) / 2);
+            }
+        }
+        target.setPixels(pixels, 0, sourceWidth, 0, 0, sourceWidth, sourceHeight);
+        return target;
     }
 
     public Bitmap invert() {

@@ -5,6 +5,9 @@
         android:title="@string/action_save"
         android:showAsAction="always" />
     <item
+        android:id="@+id/colorizeFilter"
+        android:title="@string/colorizeFilter" />
+    <item
         android:id="@+id/invertFilter"
         android:title="@string/invertFilter" />
     <item

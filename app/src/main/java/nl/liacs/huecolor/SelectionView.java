@@ -16,9 +16,11 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.ParcelFileDescriptor;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.util.TypedValue;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.Toast;
 
 import java.io.File;
 import java.io.FileDescriptor;
@@ -107,6 +109,7 @@ public class SelectionView extends View {
     private int bitmapWidth = 0, bitmapHeight = 0;
     private Bitmap alteredBitmap = null;
     private int currentFilter = 0;
+    private int currentColor = Color.RED;
 
     // Drawing
     private Paint paint;
@@ -150,6 +153,7 @@ public class SelectionView extends View {
     public final static int SEPIA_FILTER = 2;
     public final static int SNOW_FILTER = 3;
     public final static int GRAYSCALE_FILTER = 4;
+    public final static int COLORIZE_FILTER = 5;
 
     public SelectionView(Context context) {
         this(context, null, GRAYSCALE_FILTER);
@@ -236,6 +240,17 @@ public class SelectionView extends View {
     public void applyFilter(int filterOption) {
         this.currentFilter = filterOption;
         switch(filterOption) {
+            case COLORIZE_FILTER:
+                ColorPickerDialog dialog = new ColorPickerDialog(getContext(), new ColorPickerDialog.OnColorChangedListener() {
+                    @Override
+                    public void colorChanged(int color) {
+                        currentColor = color;
+                        alteredBitmap = filters.colorize(color);
+                        invalidate();
+                    }
+                }, currentColor);
+                dialog.show();
+                break;
             case INVERT_FILTER:
                 alteredBitmap = filters.invert();
                 break;
@@ -645,8 +660,8 @@ public class SelectionView extends View {
                 point.x = (point.x < 0 ? 0 : (point.x > bitmapWidth ? bitmapWidth : point.x));
                 point.y = (point.y < 0 ? 0 : (point.y > bitmapHeight ? bitmapHeight : point.y));
 
-                int i = (int)(point.x / BLOCK_SIZE);
-                int j = (int)(point.y / BLOCK_SIZE);
+                int i = (int) (point.x / BLOCK_SIZE);
+                int j = (int) (point.y / BLOCK_SIZE);
 
                 PointsList bucket = edgePointBuckets[i][j];
                 // Check if the point already happens to be on an edge.
@@ -657,11 +672,11 @@ public class SelectionView extends View {
                     // Check the neighbors since they might be closer
                     for (int[] neighbor : neighbors) {
                         if (i + neighbor[0] < 0 || i + neighbor[0] > bucketWidth - 1 ||
-                            j + neighbor[1] < 0 || j + neighbor[1] > bucketHeight - 1) {
+                                j + neighbor[1] < 0 || j + neighbor[1] > bucketHeight - 1) {
                             continue;
                         }
-                        float xD = neighbor[0] * (i-minDistance.x);
-                        float yD = neighbor[1] * (j-minDistance.y);
+                        float xD = neighbor[0] * (i - minDistance.x);
+                        float yD = neighbor[1] * (j - minDistance.y);
                         if (xD * xD + yD * yD < minDistance.distance * minDistance.distance) {
                             // Check neighbor since we're close to it
                             bucket = edgePointBuckets[i + neighbor[0]][j + neighbor[1]];
@@ -697,6 +712,8 @@ public class SelectionView extends View {
             // Finish drawing the line.
             path.lineTo(startX, startY);
             adjustDone = true;
+        } catch (IndexOutOfBoundsException e) {
+            // Ignore the exception since the points list was probably changed.
         } catch (ConcurrentModificationException e) {
             // Ignore the exception and let the concurrent access handle everything.
         }
