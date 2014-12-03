@@ -20,9 +20,10 @@ import android.os.Bundle;
 import android.app.Dialog;
 import android.content.Context;
 import android.graphics.*;
-import android.util.Log;
+import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.LinearLayout;
 
 /* Based on https://android.googlesource.com/platform/development/+/master/samples/ApiDemos/src/com/example/android/apis/graphics/ColorPickerDialog.java */
 public class ColorPickerDialog extends Dialog {
@@ -76,9 +77,8 @@ public class ColorPickerDialog extends Dialog {
         @Override
         protected void onSizeChanged(int w, int h, int oldWidth, int oldHeight) {
             super.onSizeChanged(w, h, oldWidth, oldHeight);
-            canvasLeft = CENTER_X - w / 2;
-            canvasTop = CENTER_Y - h / 2;
-            Log.d("HueColorC", "Left: " + canvasLeft + " Top: " + canvasTop + "W: " + w + " H: " + h);
+            canvasLeft = w / 2 - CENTER_X;
+            canvasTop = h / 2 - CENTER_Y;
         }
 
         @Override
@@ -105,7 +105,7 @@ public class ColorPickerDialog extends Dialog {
 
         @Override
         protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-            setMeasuredDimension(CENTER_X*2, CENTER_Y*2);
+            setMeasuredDimension(View.MeasureSpec.getSize(widthMeasureSpec), CENTER_Y*2);
         }
 
         private int floatToByte(float x) {
@@ -146,7 +146,7 @@ public class ColorPickerDialog extends Dialog {
         }
 
         private int rotateColor(int color, float rad) {
-            float deg = rad * 180 / 3.1415927f;
+            float deg = (float) (rad * 180 / Math.PI);
             int r = Color.red(color);
             int g = Color.green(color);
             int b = Color.blue(color);
@@ -224,11 +224,15 @@ public class ColorPickerDialog extends Dialog {
         super.onCreate(savedInstanceState);
         OnColorChangedListener l = new OnColorChangedListener() {
             public void colorChanged(int color) {
-                //mListener.colorChanged(color);
                 dismiss();
             }
         };
         view = new ColorPickerView(getContext(), l, mInitialColor);
+        LinearLayout.LayoutParams layoutParams=new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.FILL_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        layoutParams.gravity = Gravity.CENTER;
+        view.setLayoutParams(layoutParams);
 
         setOnDismissListener(new OnDismissListener() {
             @Override
