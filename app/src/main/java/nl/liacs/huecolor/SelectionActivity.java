@@ -77,6 +77,9 @@ public class SelectionActivity extends BaseActivity {
                 Toast.makeText(this, "Image sucessfully saved", Toast.LENGTH_LONG).show();
                 finish();
                 break;
+            case R.id.action_invertSelection:
+                initialView.invertSelection();
+                break;
             case R.id.colorizeFilter:
                 initialView.applyFilter(SelectionView.COLORIZE_FILTER);
                 break;

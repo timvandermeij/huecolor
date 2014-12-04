@@ -113,7 +113,9 @@ public class SelectionView extends View {
     private Paint paint;
     private Paint fillPaint;
     private Path path;
+    private Path canvasPath;
     private boolean drawPath = true;
+    private boolean invertSelection = false;
     private float touchStartX, touchStartY; // Used for closing an incomplete path
     private float startX, startY; // Used for calculating new point of line
     private static final float TOUCH_TOLERANCE = 4; // Defines how quickly we should draw a point
@@ -170,6 +172,8 @@ public class SelectionView extends View {
 
     public void initializeDraw() {
         path = new Path();
+        canvasPath = new Path();
+        canvasPath.setFillType(Path.FillType.EVEN_ODD);
 
         // Define the paint for the selection line.
         paint = new Paint();
@@ -266,6 +270,11 @@ public class SelectionView extends View {
         invalidate();
     }
 
+    public void invertSelection() {
+        invertSelection = !invertSelection;
+        invalidate();
+    }
+
     @Override
     protected void onSizeChanged(int w, int h, int oldWidth, int oldHeight) {
         super.onSizeChanged(w, h, oldWidth, oldHeight);
@@ -302,6 +311,9 @@ public class SelectionView extends View {
         fillPaint.setShader(fillShader);
 
         movePath(oldBitmapWidth, oldBitmapHeight);
+
+        canvasPath.reset();
+        canvasPath.addRect(canvasLeft, canvasTop, canvasLeft + bitmapWidth, canvasTop + bitmapHeight, Path.Direction.CW);
 
         // Start edge detection as a background process.
         startEdgeDetection();
@@ -380,6 +392,7 @@ public class SelectionView extends View {
         outState.putString("fileUri", (fileUri == null ? null : fileUri.toString()));
         outState.putInt("currentFilter", currentFilter);
         outState.putParcelableArrayList("pointsList", pointsList.getPoints());
+        outState.putBoolean("invertSelection", invertSelection);
         outState.putBoolean("adjustDone", adjustDone);
         outState.putInt("bitmapWidth", bitmap.getWidth());
         outState.putInt("bitmapHeight", bitmap.getHeight());
@@ -390,6 +403,7 @@ public class SelectionView extends View {
         fileUri = (uri == null ? null : Uri.parse(uri));
         currentFilter = savedInstanceState.getInt("currentFilter");
         pointsList = new PointsList(savedInstanceState.<PointF>getParcelableArrayList("pointsList"));
+        invertSelection = savedInstanceState.getBoolean("invertSelection");
         adjustDone = savedInstanceState.getBoolean("adjustDone");
         bitmapWidth = savedInstanceState.getInt("bitmapWidth");
         bitmapHeight = savedInstanceState.getInt("bitmapHeight");
@@ -430,12 +444,24 @@ public class SelectionView extends View {
 
     protected void performDraw(Canvas canvas) {
         if (alteredBitmap != null) {
-            canvas.drawBitmap(alteredBitmap, canvasLeft, canvasTop, null);
+            if (invertSelection && !adjustDone && drawPath) {
+                canvas.drawBitmap(bitmap, canvasLeft, canvasTop, null);
+            }
+            else {
+                canvas.drawBitmap(alteredBitmap, canvasLeft, canvasTop, null);
+            }
             if (drawPath) {
                 canvas.drawPath(path, paint);
             }
             if (adjustDone || !drawPath) {
-                canvas.drawPath(path, fillPaint);
+                if (invertSelection) {
+                    Path p = new Path(canvasPath);
+                    p.addPath(path);
+                    canvas.drawPath(p, fillPaint);
+                }
+                else {
+                    canvas.drawPath(path, fillPaint);
+                }
             }
         }
     }

@@ -11,4 +11,5 @@
     <string name="action_save">Save</string>
     <string name="colorizeFilter">Colorize</string>
     <string name="colorpicker_title">Pick a color</string>
+    <string name="action_invertSelection">Invert selection</string>
 </resources>
