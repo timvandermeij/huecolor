@@ -25,13 +25,17 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.widget.LinearLayout;
 
-/* Based on https://android.googlesource.com/platform/development/+/master/samples/ApiDemos/src/com/example/android/apis/graphics/ColorPickerDialog.java */
+/**
+ * Based on https://android.googlesource.com/platform/development/+/master/samples/ApiDemos/src/com/example/android/apis/graphics/ColorPickerDialog.java
+ */
 public class ColorPickerDialog extends Dialog {
     public interface OnColorChangedListener {
         void colorChanged(int color);
     }
     private OnColorChangedListener mListener;
     private int mInitialColor;
+    protected ColorPickerView view;
+
     private static class ColorPickerView extends View {
         private Paint mPaint;
         private Paint mCenterPaint;
@@ -55,8 +59,7 @@ public class ColorPickerDialog extends Dialog {
             super(c);
             mListener = l;
             mColors = new int[] {
-                    0xFFFF0000, 0xFFFF00FF, 0xFF0000FF, 0xFF00FFFF, 0xFF00FF00,
-                    0xFFFFFF00, 0xFFFF0000
+                0xFFFF0000, 0xFFFF00FF, 0xFF0000FF, 0xFF00FFFF, 0xFF00FF00, 0xFFFFFF00, 0xFFFF0000
             };
             Shader s = new SweepGradient(0, 0, mColors, null);
             mPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -66,7 +69,7 @@ public class ColorPickerDialog extends Dialog {
             mCenterPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
             mCenterPaint.setColor(color);
             mCenterPaint.setStrokeWidth(5);
-            float r = CENTER_X - mPaint.getStrokeWidth()*0.5f;
+            float r = CENTER_X - mPaint.getStrokeWidth() * 0.5f;
             oval = new RectF(-r, -r, r, r);
         }
 
@@ -84,7 +87,6 @@ public class ColorPickerDialog extends Dialog {
         @Override
         protected void onDraw(Canvas canvas) {
             canvas.translate(canvasLeft + CENTER_X, canvasTop + CENTER_Y);
-            //canvas.translate(CENTER_X, CENTER_Y);
             canvas.drawOval(oval, mPaint);
             canvas.drawCircle(0, 0, CENTER_RADIUS, mCenterPaint);
             if (mTrackingCenter) {
@@ -95,9 +97,7 @@ public class ColorPickerDialog extends Dialog {
                 } else {
                     mCenterPaint.setAlpha(0x80);
                 }
-                canvas.drawCircle(0, 0,
-                        CENTER_RADIUS + mCenterPaint.getStrokeWidth(),
-                        mCenterPaint);
+                canvas.drawCircle(0, 0, CENTER_RADIUS + mCenterPaint.getStrokeWidth(), mCenterPaint);
                 mCenterPaint.setStyle(Paint.Style.FILL);
                 mCenterPaint.setColor(c);
             }
@@ -105,14 +105,14 @@ public class ColorPickerDialog extends Dialog {
 
         @Override
         protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-            setMeasuredDimension(View.MeasureSpec.getSize(widthMeasureSpec), CENTER_Y*2);
+            setMeasuredDimension(View.MeasureSpec.getSize(widthMeasureSpec), CENTER_Y * 2);
         }
 
         private int floatToByte(float x) {
             return java.lang.Math.round(x);
         }
 
-        private int pinToByte(int n) {
+        private int clampToByte(int n) {
             if (n < 0) {
                 n = 0;
             } else if (n > 255) {
@@ -125,7 +125,7 @@ public class ColorPickerDialog extends Dialog {
             return s + java.lang.Math.round(p * (d - s));
         }
 
-        private int interpColor(int colors[], float unit) {
+        private int interpretColor(int colors[], float unit) {
             if (unit <= 0) {
                 return colors[0];
             }
@@ -135,7 +135,8 @@ public class ColorPickerDialog extends Dialog {
             float p = unit * (colors.length - 1);
             int i = (int)p;
             p -= i;
-            // now p is just the fractional part [0...1) and i is the index
+
+            // Now p is just the fractional part [0...1) and i is the index
             int c0 = colors[i];
             int c1 = colors[i+1];
             int a = ave(Color.alpha(c0), Color.alpha(c1), p);
@@ -161,14 +162,13 @@ public class ColorPickerDialog extends Dialog {
             int ir = floatToByte(a[0] * r + a[1] * g + a[2] * b);
             int ig = floatToByte(a[5] * r + a[6] * g + a[7] * b);
             int ib = floatToByte(a[10] * r + a[11] * g + a[12] * b);
-            return Color.argb(Color.alpha(color), pinToByte(ir),
-                    pinToByte(ig), pinToByte(ib));
+            return Color.argb(Color.alpha(color), clampToByte(ir), clampToByte(ig), clampToByte(ib));
         }
 
         @Override
         public boolean onTouchEvent(MotionEvent event) {
-            float x = event.getX() - CENTER_X;
-            float y = event.getY() - CENTER_Y;
+            float x = event.getX() - CENTER_X - canvasLeft;
+            float y = event.getY() - CENTER_Y - canvasTop;
             boolean inCenter = java.lang.Math.hypot(x, y) <= CENTER_RADIUS;
             switch (event.getAction()) {
                 case MotionEvent.ACTION_DOWN:
@@ -186,12 +186,12 @@ public class ColorPickerDialog extends Dialog {
                         }
                     } else {
                         float angle = (float)java.lang.Math.atan2(y, x);
-                        // need to turn angle [-PI ... PI] into unit [0....1]
+                        // We need to turn angle [-PI ... PI] into unit [0....1].
                         float unit = (float) (angle/(2*Math.PI));
                         if (unit < 0) {
                             unit += 1;
                         }
-                        mCenterPaint.setColor(interpColor(mColors, unit));
+                        mCenterPaint.setColor(interpretColor(mColors, unit));
                         invalidate();
                     }
                     break;
@@ -200,7 +200,7 @@ public class ColorPickerDialog extends Dialog {
                         if (inCenter) {
                             mListener.colorChanged(mCenterPaint.getColor());
                         }
-                        mTrackingCenter = false; // so we draw w/o halo
+                        mTrackingCenter = false;
                         invalidate();
                     }
                     break;
@@ -209,11 +209,7 @@ public class ColorPickerDialog extends Dialog {
         }
     }
 
-    protected ColorPickerView view;
-
-    public ColorPickerDialog(Context context,
-                             OnColorChangedListener listener,
-                             int initialColor) {
+    public ColorPickerDialog(Context context, OnColorChangedListener listener, int initialColor) {
         super(context);
         mListener = listener;
         mInitialColor = initialColor;
@@ -228,8 +224,8 @@ public class ColorPickerDialog extends Dialog {
             }
         };
         view = new ColorPickerView(getContext(), l, mInitialColor);
-        LinearLayout.LayoutParams layoutParams=new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.FILL_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
+        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.FILL_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
         );
         layoutParams.gravity = Gravity.CENTER;
         view.setLayoutParams(layoutParams);
@@ -241,6 +237,7 @@ public class ColorPickerDialog extends Dialog {
             }
         });
         setContentView(view);
+
         setTitle(getContext().getString(R.string.colorpicker_title));
     }
 }

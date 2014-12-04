@@ -446,8 +446,7 @@ public class SelectionView extends View {
         if (alteredBitmap != null) {
             if (invertSelection && !adjustDone && drawPath) {
                 canvas.drawBitmap(bitmap, canvasLeft, canvasTop, null);
-            }
-            else {
+            } else {
                 canvas.drawBitmap(alteredBitmap, canvasLeft, canvasTop, null);
             }
             if (drawPath) {
@@ -458,8 +457,7 @@ public class SelectionView extends View {
                     Path p = new Path(canvasPath);
                     p.addPath(path);
                     canvas.drawPath(p, fillPaint);
-                }
-                else {
+                } else {
                     canvas.drawPath(path, fillPaint);
                 }
             }
@@ -678,31 +676,29 @@ public class SelectionView extends View {
         boolean snap = false;
         float snapX = point.x + xD;
         float snapY = point.y + yD;
+
         if (snapX <= 0.0f) {
             snap = true;
             xD += snapX;
             snapX = 0.0f;
-        }
-        else if (snapX > bitmapWidth) {
+        } else if (snapX > bitmapWidth) {
             snap = true;
             xD -= snapX - bitmapWidth;
             snapX = bitmapWidth;
-        }
-        else {
+        } else {
             snapX = point.x;
             xD = 0.0f;
         }
+
         if (snapY <= 0.0f) {
             snap = true;
             yD += snapY;
             snapY = 0.0f;
-        }
-        else if (snapY > bitmapHeight) {
+        } else if (snapY > bitmapHeight) {
             snap = true;
             yD -= snapY - bitmapHeight;
             snapY = bitmapHeight;
-        }
-        else {
+        } else {
             snapY = point.y;
             yD = 0.0f;
         }
@@ -745,7 +741,7 @@ public class SelectionView extends View {
                         float xD = (neighbor[0] == 0 ? 0.0f : (i * BLOCK_SIZE - point.x) + (neighbor[0] == 1 ? BLOCK_SIZE : 0.0f));
                         float yD = (neighbor[1] == 0 ? 0.0f : (j * BLOCK_SIZE - point.y) + (neighbor[1] == 1 ? BLOCK_SIZE : 0.0f));
                         if (i + neighbor[0] < 0 || i + neighbor[0] > bucketWidth - 1 ||
-                                j + neighbor[1] < 0 || j + neighbor[1] > bucketHeight - 1) {
+                            j + neighbor[1] < 0 || j + neighbor[1] > bucketHeight - 1) {
                             // Potentially snap to boundary of the bitmap, but only in the correct axis. Also fix the distances.
                             snapToBoundary(point, xD, yD, minDistance);
                         } else if (xD * xD + yD * yD < minDistance.distance * minDistance.distance) {

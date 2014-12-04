@@ -74,7 +74,7 @@ public class SelectionActivity extends BaseActivity {
                 File outputFile = getOutputMediaFile(MEDIA_TYPE_IMAGE);
                 initialView.saveCanvas(outputFile);
                 addFileToGallery(outputFile);
-                Toast.makeText(this, "Image sucessfully saved", Toast.LENGTH_LONG).show();
+                Toast.makeText(this, "Image successfully saved", Toast.LENGTH_LONG).show();
                 finish();
                 break;
             case R.id.action_invertSelection:
