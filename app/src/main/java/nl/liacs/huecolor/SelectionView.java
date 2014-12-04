@@ -674,6 +674,48 @@ public class SelectionView extends View {
         adjustPathThread.start();
     }
 
+    private boolean snapToBoundary(PointF point, float xD, float yD, Distance minDistance) {
+        boolean snap = false;
+        float snapX = point.x + xD;
+        float snapY = point.y + yD;
+        if (snapX <= 0.0f) {
+            snap = true;
+            xD += snapX;
+            snapX = 0.0f;
+        }
+        else if (snapX > bitmapWidth) {
+            snap = true;
+            xD -= snapX - bitmapWidth;
+            snapX = bitmapWidth;
+        }
+        else {
+            snapX = point.x;
+            xD = 0.0f;
+        }
+        if (snapY <= 0.0f) {
+            snap = true;
+            yD += snapY;
+            snapY = 0.0f;
+        }
+        else if (snapY > bitmapHeight) {
+            snap = true;
+            yD -= snapY - bitmapHeight;
+            snapY = bitmapHeight;
+        }
+        else {
+            snapY = point.y;
+            yD = 0.0f;
+        }
+
+        // Correct the distance to the snapped point.
+        if (snap && xD * xD + yD * yD < minDistance.distance * minDistance.distance) {
+            minDistance.x = snapX;
+            minDistance.y = snapY;
+            minDistance.distance = (float) Math.sqrt(xD * xD + yD * yD);
+        }
+        return snap;
+    }
+
     private void adjustPath() {
         try {
             // We want to move each point in the points list to the nearest edge pixel.
@@ -681,27 +723,32 @@ public class SelectionView extends View {
 
             for (PointF point : pointsList.getPoints()) {
                 Distance minDistance = new Distance(0.0f, 0.0f, Float.POSITIVE_INFINITY);
-                point.x = (point.x < 0 ? 0 : (point.x > bitmapWidth ? bitmapWidth : point.x));
-                point.y = (point.y < 0 ? 0 : (point.y > bitmapHeight ? bitmapHeight : point.y));
+                if (snapToBoundary(point, 0.0f, 0.0f, minDistance)) {
+                    // If we were outside the bounds already, just snap to the boundary and ignore other edges.
+                    point.set(minDistance.x, minDistance.y);
+                    continue;
+                }
 
                 int i = (int) (point.x / BLOCK_SIZE);
                 int j = (int) (point.y / BLOCK_SIZE);
 
                 PointsList bucket = edgePointBuckets[i][j];
-                // Check if the point already happens to be on an edge.
                 if (bucket != null) {
                     bucket.findClosestPoint(point, minDistance);
                 }
+                // Check if the point already happens to be on an edge (distance is 0), then we
+                // don't need to do anything.
                 if (minDistance.distance > 0.0f) {
-                    // Check the neighbors since they might be closer
+                    // Otherwise, check the neighbors since they might have closer edge points
                     for (int[] neighbor : neighbors) {
+                        // Calculate distance to the block border with this neighbor
+                        float xD = (neighbor[0] == 0 ? 0.0f : (i * BLOCK_SIZE - point.x) + (neighbor[0] == 1 ? BLOCK_SIZE : 0.0f));
+                        float yD = (neighbor[1] == 0 ? 0.0f : (j * BLOCK_SIZE - point.y) + (neighbor[1] == 1 ? BLOCK_SIZE : 0.0f));
                         if (i + neighbor[0] < 0 || i + neighbor[0] > bucketWidth - 1 ||
                                 j + neighbor[1] < 0 || j + neighbor[1] > bucketHeight - 1) {
-                            continue;
-                        }
-                        float xD = neighbor[0] * (i - minDistance.x);
-                        float yD = neighbor[1] * (j - minDistance.y);
-                        if (xD * xD + yD * yD < minDistance.distance * minDistance.distance) {
+                            // Potentially snap to boundary of the bitmap, but only in the correct axis. Also fix the distances.
+                            snapToBoundary(point, xD, yD, minDistance);
+                        } else if (xD * xD + yD * yD < minDistance.distance * minDistance.distance) {
                             // Check neighbor since we're close to it
                             bucket = edgePointBuckets[i + neighbor[0]][j + neighbor[1]];
                             if (bucket != null) {
