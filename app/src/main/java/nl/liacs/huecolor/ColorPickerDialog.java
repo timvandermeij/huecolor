@@ -48,8 +48,8 @@ public class ColorPickerDialog extends Dialog {
         private int canvasLeft = 0, canvasTop = 0;
 
         private static final int CENTER_X = 100;
-        private static final int CENTER_Y = 100;
-        private static final int CENTER_RADIUS = 32;
+        private static final int CENTER_Y = 200;
+        private static final int CENTER_RADIUS = 40;
 
         ColorPickerView(Context c) {
             this(c, null, 0);
@@ -65,11 +65,11 @@ public class ColorPickerDialog extends Dialog {
             mPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
             mPaint.setShader(s);
             mPaint.setStyle(Paint.Style.STROKE);
-            mPaint.setStrokeWidth(32);
+            mPaint.setStrokeWidth(40);
             mCenterPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
             mCenterPaint.setColor(color);
             mCenterPaint.setStrokeWidth(5);
-            float r = CENTER_X - mPaint.getStrokeWidth() * 0.5f;
+            float r = CENTER_X - mPaint.getStrokeWidth() * 0.05f;
             oval = new RectF(-r, -r, r, r);
         }
 
@@ -144,25 +144,6 @@ public class ColorPickerDialog extends Dialog {
             int g = ave(Color.green(c0), Color.green(c1), p);
             int b = ave(Color.blue(c0), Color.blue(c1), p);
             return Color.argb(a, r, g, b);
-        }
-
-        private int rotateColor(int color, float rad) {
-            float deg = (float) (rad * 180 / Math.PI);
-            int r = Color.red(color);
-            int g = Color.green(color);
-            int b = Color.blue(color);
-            ColorMatrix cm = new ColorMatrix();
-            ColorMatrix tmp = new ColorMatrix();
-            cm.setRGB2YUV();
-            tmp.setRotate(0, deg);
-            cm.postConcat(tmp);
-            tmp.setYUV2RGB();
-            cm.postConcat(tmp);
-            final float[] a = cm.getArray();
-            int ir = floatToByte(a[0] * r + a[1] * g + a[2] * b);
-            int ig = floatToByte(a[5] * r + a[6] * g + a[7] * b);
-            int ib = floatToByte(a[10] * r + a[11] * g + a[12] * b);
-            return Color.argb(Color.alpha(color), clampToByte(ir), clampToByte(ig), clampToByte(ib));
         }
 
         @Override
