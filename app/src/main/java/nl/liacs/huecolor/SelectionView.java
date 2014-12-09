@@ -125,7 +125,7 @@ public class SelectionView extends View {
     // Edge detection constants
     private final static int KERNEL_WIDTH = 3;
     private final static int KERNEL_HEIGHT = 3;
-    private final static int EDGE_THRESHOLD = 100;
+    private final static int EDGE_THRESHOLD = 60;
     private final static int[][] kernel = {
         {0, -1, 0},
         {-1, 4, -1},
